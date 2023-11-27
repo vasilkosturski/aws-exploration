@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataLakeFirehoseGlue", "DataLakeFirehoseGlue\DataLakeFirehoseGlue.csproj", "{5F3EFC1C-8749-43F7-9AB2-A85C15927B6B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacebookStreamDataLakeBuilder", "FacebookStreamDataLakeBuilder\FacebookStreamDataLakeBuilder.csproj", "{5F3EFC1C-8749-43F7-9AB2-A85C15927B6B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
