@@ -8,7 +8,6 @@ await FetchNewsAsync();
 
 static async Task FetchNewsAsync()
 {
-    // init with your API key
     var newsApiClient = new NewsApiClient(apiKey);
     var articlesResponse = await newsApiClient.GetEverythingAsync(new EverythingRequest
     {
@@ -23,20 +22,8 @@ static async Task FetchNewsAsync()
     });
     if (articlesResponse.Status == Statuses.Ok)
     {
-        // total results found
-        Console.WriteLine(articlesResponse.TotalResults);
-        // here's the first 20
         foreach (var article in articlesResponse.Articles)
         {
-            // title
-            Console.WriteLine(article.Title);
-            // author
-            Console.WriteLine(article.Author);
-            // description
-            Console.WriteLine(article.Description);
-            // url
-            Console.WriteLine(article.Url);
-            // published at
             Console.WriteLine(article.PublishedAt);
         }
     }
