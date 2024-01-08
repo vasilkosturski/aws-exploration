@@ -15,8 +15,7 @@ var articles = await FetchNewsAsync();
 foreach (var article in articles)
     Console.WriteLine($"{article.PublishedAt}: {article.Title}");
 
-using var firehoseClient = new AmazonKinesisFirehoseClient(RegionEndpoint.USEast1);
-await SendToFirehoseAsync(firehoseClient, articles);
+await SendToFirehoseAsync(articles);
 
 Console.ReadKey();
 
@@ -32,14 +31,15 @@ static async Task<List<Article>> FetchNewsAsync()
         },
         SortBy = SortBys.PublishedAt,
         Language = Languages.EN,
-        From = DateTime.UtcNow.Subtract(TimeSpan.FromDays(10))
+        From = DateTime.UtcNow.Subtract(TimeSpan.FromDays(5))
     });
     
     return articlesResponse.Articles;
 }
 
-static async Task SendToFirehoseAsync(AmazonKinesisFirehoseClient firehoseClient, List<Article> articles)
+static async Task SendToFirehoseAsync(List<Article> articles)
 {
+    using var firehoseClient = new AmazonKinesisFirehoseClient(RegionEndpoint.USEast1);
     foreach (var article in articles)
     {
         var articleJson = JsonSerializer.Serialize(article); 
