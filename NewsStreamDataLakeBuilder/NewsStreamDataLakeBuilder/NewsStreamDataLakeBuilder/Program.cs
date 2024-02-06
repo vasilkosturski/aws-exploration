@@ -8,9 +8,9 @@ using NewsAPI.Constants;
 using NewsAPI.Models;
 
 // Replace this with your actual API key
-const string apiKey = "your_api_key";
+const string apiKey = "fd294ab551504c18bed86254e42bb280";
 
-const string firehoseStream = "NEWS-API-STREAM";
+const string firehoseStream = "news-stream";
 
 var articles = await FetchNewsAsync();
 
