@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "source",
+    "Type": "struct<Id:string,Name:string>",
+    "Comment": ""
+  },
+  {
+    "Name": "author",
+    "Type": "string",
+    "Comment": ""
+  },
+  {
+    "Name": "title",
+    "Type": "string",
+    "Comment": ""
+  }
+]
