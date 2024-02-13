@@ -8,7 +8,7 @@ using NewsAPI.Constants;
 using NewsAPI.Models;
 
 // Replace this with your actual API key
-const string apiKey = "fd294ab551504c18bed86254e42bb280";
+const string apiKey = "<api_key>";
 
 const string firehoseStream = "news-stream";
 
