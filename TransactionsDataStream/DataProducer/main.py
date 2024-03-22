@@ -13,7 +13,6 @@ def increment_time(minutes=0, seconds=0):
     return start_time + timedelta(minutes=minutes, seconds=seconds)
 
 
-# Transactions with incremented timestamps
 transactions = [
     # Normal transactions
     {'accountId': 'acc123', 'amount': 50, 'eventTime': increment_time(minutes=15)},
@@ -34,7 +33,7 @@ transactions = [
 
 
 def send_transaction(transaction):
-    transaction['eventTime'] = transaction['eventTime'].isoformat()  # Convert to ISO format
+    transaction['eventTime'] = transaction['eventTime'].isoformat()
     result = kinesis_client.put_record(
         StreamName=STREAM_NAME,
         Data=json.dumps(transaction),
