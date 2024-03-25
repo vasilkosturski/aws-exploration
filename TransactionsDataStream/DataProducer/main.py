@@ -39,7 +39,8 @@ def send_transaction(transaction):
         Data=json.dumps(transaction),
         PartitionKey=transaction['accountId']
     )
-    print(f"Sent transaction for amount ${transaction['amount']} at {transaction['eventTime']}. Sequence number: {result['SequenceNumber']}")
+    print(f"Sent transaction for amount ${transaction['amount']} at {transaction['eventTime']}. "
+          f"Sequence number: {result['SequenceNumber']}")
 
 
 if __name__ == '__main__':
