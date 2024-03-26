@@ -2,7 +2,7 @@ import json
 import boto3
 from datetime import datetime, timedelta
 
-STREAM_NAME = 'TransactionsDataStream'
+STREAM_NAME = 'TransactionsInputDataStream'
 
 kinesis_client = boto3.client('kinesis', region_name='us-east-1')
 
