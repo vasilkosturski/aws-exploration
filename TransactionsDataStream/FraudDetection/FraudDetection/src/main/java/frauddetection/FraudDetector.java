@@ -12,7 +12,7 @@ import java.util.Properties;
 
 public class FraudDetector {
     private static final String region = "us-east-1";
-    private static final String inputStreamName = "TransactionsDataStream";
+    private static final String inputStreamName = "TransactionsInputStream";
     private static final String outputStreamName = "TransactionsOutputStream";
 
     private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
