@@ -28,3 +28,28 @@ Resources:
                   - kinesis:DescribeStream
                   - kinesis:ListStreams
                 Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/TransactionsOutputStream
+
+  KinesisTransactionsHandler:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: KinesisTransactionsHandler
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt KinesisTransactionsHandlerRole.Arn
+      Code:
+        ZipFile: |
+          import base64
+          import logging
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          def lambda_handler(event, context):
+              for record in event['Records']:
+                  payload = base64.b64decode(record["kinesis"]["data"]).decode('utf-8')
+                  logger.info('Decoded payload: %s', payload)
+              return 'Successfully processed {} records.'.format(len(event['Records']))
+      Runtime: python3.12
+      Timeout: 30
+      MemorySize: 128
+      Architectures:
+        - x86_64
