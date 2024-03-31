@@ -14,6 +14,8 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
         - PolicyName: KinesisTransactionsHandlerPolicy
           PolicyDocument:
@@ -25,49 +27,52 @@ Resources:
                   - kinesis:GetShardIterator
                   - kinesis:DescribeStream
                   - kinesis:ListStreams
-                Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/YourKinesisStreamName
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*:*
+                Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/TransactionsOutputStream
 
   KinesisTransactionsHandler:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: MyKinesisProcessingFunction
-      Handler: index.lambda_handler
+      FunctionName: KinesisTransactionsHandler
+      Handler: lambda_function.lambda_handler
       Role: !GetAtt KinesisTransactionsHandlerRole.Arn
       Code:
         ZipFile: |
           import base64
           import logging
+
           logger = logging.getLogger()
           logger.setLevel(logging.INFO)
+
           def lambda_handler(event, context):
               for record in event['Records']:
-                  payload = base64.b64decode(record["kinesis"]["data"])
+                  payload = base64.b64decode(record["kinesis"]["data"]).decode('utf-8')
                   logger.info('Decoded payload: %s', payload)
               return 'Successfully processed {} records.'.format(len(event['Records']))
-      Runtime: python3.8
-      Timeout: 30 # Maximum AWS Lambda timeout setting
+      Runtime: python3.12
+      Timeout: 30
+      MemorySize: 128
+      Architectures:
+        - x86_64
 
-  LambdaKinesisEventSourceMapping:
+  LambdaKinesisTrigger:
     Type: AWS::Lambda::EventSourceMapping
     DependsOn: KinesisTransactionsHandler
     Properties:
       BatchSize: 100
       Enabled: true
-      EventSourceArn: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/YourKinesisStreamName
-      FunctionName: !Ref KinesisTransactionsHandler
+      EventSourceArn: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/TransactionsOutputStream
+      FunctionName: !GetAtt KinesisTransactionsHandler.Arn
       StartingPosition: LATEST
 
 Outputs:
   LambdaFunctionArn:
-    Description: Lambda Function ARN
+    Description: "ARN of the Lambda Function"
     Value: !GetAtt KinesisTransactionsHandler.Arn
 
   LambdaFunctionName:
-    Description: Lambda Function Name
+    Description: "Name of the Lambda Function"
     Value: !Ref KinesisTransactionsHandler
+
+  KinesisStreamArn:
+    Description: "ARN of the Kinesis Stream used as the event source"
+    Value: !GetAtt LambdaKinesisTrigger.EventSourceArn
