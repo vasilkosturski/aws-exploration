@@ -72,7 +72,3 @@ Outputs:
   LambdaFunctionName:
     Description: "Name of the Lambda Function"
     Value: !Ref KinesisTransactionsHandler
-
-  KinesisStreamArn:
-    Description: "ARN of the Kinesis Stream used as the event source"
-    Value: !GetAtt LambdaKinesisTrigger.EventSourceArn
