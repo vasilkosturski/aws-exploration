@@ -154,6 +154,55 @@ Resources:
           TABLE_NAME: !Ref ConnectionsTable
       Timeout: 10
 
+# web sockets api
+  WebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: websocket-transactions-api
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+
+  ConnectIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ConnectHandlerFunction.Arn}/invocations
+
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $connect
+      AuthorizationType: NONE
+      OperationName: ConnectRoute
+      Target: !Join
+        - "/"
+        - - "integrations"
+          - !Ref ConnectIntegration
+
+  DeploymentWebSocketApi:
+    Type: AWS::ApiGatewayV2::Deployment
+    Properties:
+      ApiId: !Ref WebSocketApi
+    DependsOn:
+      - ConnectRoute
+
+  StageWebSocketApi:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref WebSocketApi
+      DeploymentId: !Ref DeploymentWebSocketApi
+      StageName: production
+
+  PermissionForWebSocketConnect:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt ConnectHandlerFunction.Arn
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*/$connect
+
 Outputs:
   KinesisStreamArn:
     Description: "ARN of the Kinesis Stream"
@@ -170,3 +219,7 @@ Outputs:
   ConnectionsTableArn:
     Description: "ARN of the DynamoDB Table for WebSocket Connections"
     Value: !GetAtt ConnectionsTable.Arn
+
+  WebSocketApiEndpoint:
+    Description: "The endpoint URL for the WebSocket API"
+    Value: !Sub "wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageWebSocketApi}"
