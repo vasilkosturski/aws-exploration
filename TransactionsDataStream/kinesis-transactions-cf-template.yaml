@@ -8,6 +8,60 @@ Resources:
       Name: TransactionsOutputStream
       ShardCount: 1
 
+# Web Sockets API
+
+  WebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: websocket-transactions-api
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $connect
+      AuthorizationType: NONE
+      OperationName: ConnectRoute
+      Target: !Join
+        - "/"
+        - - "integrations"
+          - !Ref ConnectIntegration
+
+  DeploymentWebSocketApi:
+    Type: AWS::ApiGatewayV2::Deployment
+    Properties:
+      ApiId: !Ref WebSocketApi
+    DependsOn:
+      - ConnectRoute
+
+  StageWebSocketApi:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref WebSocketApi
+      DeploymentId: !Ref DeploymentWebSocketApi
+      StageName: production
+
+# Connections Table Start
+
+  ConnectionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: connectionId
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: connectionId
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+
+# Lambda Handler - Kinesis Transactions
+
   KinesisTransactionsHandlerRole:
     Type: AWS::IAM::Role
     Properties:
@@ -114,20 +168,7 @@ Resources:
       FunctionName: !GetAtt KinesisTransactionsHandler.Arn
       StartingPosition: LATEST
 
-  ConnectionsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      KeySchema:
-        - AttributeName: connectionId
-          KeyType: HASH
-      AttributeDefinitions:
-        - AttributeName: connectionId
-          AttributeType: S
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-    UpdateReplacePolicy: Delete
-    DeletionPolicy: Delete
+# Lambda Handler - Connect
 
   ConnectHandlerServiceRole:
     Type: AWS::IAM::Role
@@ -198,45 +239,12 @@ Resources:
           TABLE_NAME: !Ref ConnectionsTable
       Timeout: 10
 
-  WebSocketApi:
-    Type: AWS::ApiGatewayV2::Api
-    Properties:
-      Name: websocket-transactions-api
-      ProtocolType: WEBSOCKET
-      RouteSelectionExpression: "$request.body.action"
-
   ConnectIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref WebSocketApi
       IntegrationType: AWS_PROXY
       IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ConnectHandlerFunction.Arn}/invocations
-
-  ConnectRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref WebSocketApi
-      RouteKey: $connect
-      AuthorizationType: NONE
-      OperationName: ConnectRoute
-      Target: !Join
-        - "/"
-        - - "integrations"
-          - !Ref ConnectIntegration
-
-  DeploymentWebSocketApi:
-    Type: AWS::ApiGatewayV2::Deployment
-    Properties:
-      ApiId: !Ref WebSocketApi
-    DependsOn:
-      - ConnectRoute
-
-  StageWebSocketApi:
-    Type: AWS::ApiGatewayV2::Stage
-    Properties:
-      ApiId: !Ref WebSocketApi
-      DeploymentId: !Ref DeploymentWebSocketApi
-      StageName: production
 
   PermissionForWebSocketConnect:
     Type: AWS::Lambda::Permission
