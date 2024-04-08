@@ -34,6 +34,15 @@ Resources:
                   - kinesis:DescribeStream
                   - kinesis:ListStreams
                 Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/TransactionsOutputStream
+              - Effect: Allow
+                Action:
+                  - dynamodb:Scan
+                Resource: !GetAtt ConnectionsTable.Arn
+              - Effect: Allow
+                Action:
+                  - "execute-api:ManageConnections"
+                Resource:
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*"
 
   KinesisTransactionsHandler:
     Type: AWS::Lambda::Function
@@ -45,16 +54,51 @@ Resources:
         ZipFile: |
           import base64
           import logging
-
+          import boto3
+          import os
+          
+          # Initialize the DynamoDB and API Gateway clients
+          dynamodb = boto3.client('dynamodb')
+          api_gateway = boto3.client('apigatewaymanagementapi', endpoint_url=os.environ['WEBSOCKET_ENDPOINT'])
+          
           logger = logging.getLogger()
           logger.setLevel(logging.INFO)
-
+          
           def lambda_handler(event, context):
+              # Retrieve connection IDs from the DynamoDB table
+              connection_ids = dynamodb.scan(
+                  TableName=os.environ['CONNECTIONS_TABLE_NAME'],
+                  ProjectionExpression='connectionId'
+              ).get('Items', [])
+          
+              # Process Kinesis records
               for record in event['Records']:
                   payload = base64.b64decode(record["kinesis"]["data"]).decode('utf-8')
                   logger.info('Decoded payload: %s', payload)
-              return 'Successfully processed {} records.'.format(len(event['Records']))
-      Runtime: python3.12
+          
+                  # Send the message to each connection
+                  for connection in connection_ids:
+                      connection_id = connection['connectionId']['S']
+                      try:
+                          api_gateway.post_to_connection(
+                              ConnectionId=connection_id,
+                              Data=payload
+                          )
+                      except api_gateway.exceptions.GoneException:
+                          # Handle the case where the connection is no longer available
+                          logger.error("Connection %s is gone, consider deleting from the table", connection_id)
+                          # Consider adding logic to delete the stale connection ID from the DynamoDB table
+                      except Exception as e:
+                          # Log and handle any other exceptions
+                          logger.exception("Error sending message to connection %s: %s", connection_id, e)
+          
+              return f'Successfully processed {len(event["Records"])} records.'
+
+      Runtime: python3.8
+      Environment:
+        Variables:
+          CONNECTIONS_TABLE_NAME: !Ref ConnectionsTable
+          WEBSOCKET_ENDPOINT: !Sub "https://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageWebSocketApi}"
       Timeout: 30
       MemorySize: 128
       Architectures:
@@ -154,7 +198,6 @@ Resources:
           TABLE_NAME: !Ref ConnectionsTable
       Timeout: 10
 
-# web sockets api
   WebSocketApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
