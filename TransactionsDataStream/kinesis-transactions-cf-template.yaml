@@ -2,6 +2,12 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Lambda Function Triggered by Kinesis Stream
 
 Resources:
+  TransactionsInputStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: TransactionsInputStream
+      ShardCount: 1
+
   TransactionsOutputStream:
     Type: AWS::Kinesis::Stream
     Properties:
