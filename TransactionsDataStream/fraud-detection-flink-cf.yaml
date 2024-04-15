@@ -48,7 +48,7 @@ Resources:
     Type: "AWS::KinesisAnalyticsV2::Application"
     Properties:
       ApplicationName: "FlinkTransactionProcessing"
-      RuntimeEnvironment: "FLINK-1_13"
+      RuntimeEnvironment: "FLINK-1_15"
       ServiceExecutionRole: !GetAtt FlinkApplicationRole.Arn
       ApplicationConfiguration:
         ApplicationSnapshotConfiguration:
