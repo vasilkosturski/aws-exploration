@@ -2,69 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Lambda Function Triggered by Kinesis Stream
 
 Resources:
-  TransactionsInputStream:
-    Type: AWS::Kinesis::Stream
-    Properties:
-      Name: TransactionsInputStream
-      ShardCount: 1
-
-  TransactionsOutputStream:
-    Type: AWS::Kinesis::Stream
-    Properties:
-      Name: TransactionsOutputStream
-      ShardCount: 1
-
-# Flink app
-  FlinkApplicationRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service: "kinesisanalytics.amazonaws.com"
-            Action: "sts:AssumeRole"
-      Path: "/"
-      Policies:
-        - PolicyName: "FlinkApplicationPolicy"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action:
-                  - "kinesis:Read"
-                  - "kinesis:Write"
-                  - "kinesis:Describe"
-                Resource: "*" # Specify the ARNs for your streams and other resources as needed
-              - Effect: "Allow"
-                Action: "s3:GetObject"
-                Resource: !Sub "arn:aws:s3:::flink-transactions-code-259984666282/*"
-              - Effect: "Allow"
-                Action: "logs:PutLogEvents"
-                Resource: "arn:aws:logs:*:*:*"
-
-  FlinkApplication:
-    Type: "AWS::KinesisAnalyticsV2::Application"
-    Properties:
-      ApplicationName: "FlinkTransactionProcessing"
-      RuntimeEnvironment: "FLINK-1_13"
-      ServiceExecutionRole: !GetAtt FlinkApplicationRole.Arn
-      ApplicationConfiguration:
-        ApplicationSnapshotConfiguration:
-          SnapshotsEnabled: false
-        ApplicationCodeConfiguration:
-          CodeContent:
-            S3ContentLocation:
-              BucketARN: !Sub "arn:aws:s3:::flink-transactions-code-259984666282"
-              FileKey: "flink-fraud-detection-1.0.jar"
-          CodeContentType: "ZIPFILE"
-        FlinkApplicationConfiguration:
-          MonitoringConfiguration:
-            ConfigurationType: "CUSTOM"
-            MetricsLevel: "APPLICATION"
-            LogLevel: "INFO"
-
   # Web Sockets API
 
   WebSocketApi:
