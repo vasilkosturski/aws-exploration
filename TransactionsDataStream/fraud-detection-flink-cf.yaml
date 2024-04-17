@@ -14,7 +14,6 @@ Resources:
       Name: TransactionsOutputStream
       ShardCount: 1
 
-# Flink app
   FlinkApplicationRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -31,18 +30,32 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: "Allow"
+              - Sid: "ReadCode"
+                Effect: "Allow"
                 Action:
-                  - "kinesis:Read"
-                  - "kinesis:Write"
-                  - "kinesis:Describe"
-                Resource: "*"
-              - Effect: "Allow"
-                Action: "s3:GetObject"
-                Resource: !Sub "arn:aws:s3:::flink-transactions-code-259984666282/*"
-              - Effect: "Allow"
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                Resource: "arn:aws:s3:::flink-transactions-code-259984666282/flink-fraud-detection-1.0.jar"
+              - Sid: "ListCloudwatchLogGroups"
+                Effect: "Allow"
+                Action: "logs:DescribeLogGroups"
+                Resource: "arn:aws:logs:us-east-1:259984666282:log-group:*"
+              - Sid: "ListCloudwatchLogStreams"
+                Effect: "Allow"
+                Action: "logs:DescribeLogStreams"
+                Resource: "arn:aws:logs:us-east-1:259984666282:log-group:/aws/kinesis-analytics/FlinkAppManual:log-stream:*"
+              - Sid: "PutCloudwatchLogs"
+                Effect: "Allow"
                 Action: "logs:PutLogEvents"
-                Resource: "arn:aws:logs:*:*:*"
+                Resource: "arn:aws:logs:us-east-1:259984666282:log-group:/aws/kinesis-analytics/FlinkAppManual:log-stream:kinesis-analytics-log-stream"
+              - Sid: "ReadInputStream"
+                Effect: "Allow"
+                Action: "kinesis:*"
+                Resource: "arn:aws:kinesis:us-east-1:259984666282:stream/TransactionsInputStream"
+              - Sid: "WriteOutputStream"
+                Effect: "Allow"
+                Action: "kinesis:*"
+                Resource: "arn:aws:kinesis:us-east-1:259984666282:stream/TransactionsOutputStream"
 
   FlinkApplication:
     Type: "AWS::KinesisAnalyticsV2::Application"
@@ -51,16 +64,24 @@ Resources:
       RuntimeEnvironment: "FLINK-1_15"
       ServiceExecutionRole: !GetAtt FlinkApplicationRole.Arn
       ApplicationConfiguration:
-        ApplicationSnapshotConfiguration:
-          SnapshotsEnabled: false
         ApplicationCodeConfiguration:
           CodeContent:
             S3ContentLocation:
               BucketARN: !Sub "arn:aws:s3:::flink-transactions-code-259984666282"
               FileKey: "flink-fraud-detection-1.0.jar"
           CodeContentType: "ZIPFILE"
-        FlinkApplicationConfiguration:
-          MonitoringConfiguration:
-            ConfigurationType: "CUSTOM"
-            MetricsLevel: "APPLICATION"
-            LogLevel: "INFO"
+        EnvironmentProperties:
+          PropertyGroups:
+            - PropertyGroupId: "ProducerConfigProperties"
+              PropertyMap:
+                "flink.inputstream.initpos": "LATEST"
+                "aws.region": "us-east-1"
+                "AggregationEnabled": "false"
+            - PropertyGroupId: "ConsumerConfigProperties"
+              PropertyMap:
+                "aws.region": "us-east-1"
+
+Outputs:
+  FlinkApplicationArn:
+    Description: 'ARN of the Flink Application'
+    Value: !GetAtt [FlinkApplication, ApplicationARN]
