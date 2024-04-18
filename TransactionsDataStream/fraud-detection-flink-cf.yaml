@@ -80,8 +80,3 @@ Resources:
             - PropertyGroupId: "ConsumerConfigProperties"
               PropertyMap:
                 "aws.region": "us-east-1"
-
-Outputs:
-  FlinkApplicationArn:
-    Description: 'ARN of the Flink Application'
-    Value: !GetAtt [FlinkApplication, ApplicationARN]
