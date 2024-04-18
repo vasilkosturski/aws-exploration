@@ -36,26 +36,29 @@ Resources:
                   - "s3:GetObject"
                   - "s3:GetObjectVersion"
                 Resource: "arn:aws:s3:::flink-transactions-code-259984666282/flink-fraud-detection-1.0.jar"
-              - Sid: "ListCloudwatchLogGroups"
+              - Sid: "CloudWatchLogs"
                 Effect: "Allow"
-                Action: "logs:DescribeLogGroups"
-                Resource: "arn:aws:logs:us-east-1:259984666282:log-group:*"
-              - Sid: "ListCloudwatchLogStreams"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:DescribeLogGroups"
+                  - "logs:DescribeLogStreams"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - "arn:aws:logs:us-east-1:259984666282:log-group:/aws/kinesis-analytics/FlinkAppManual:*"
+                  - "arn:aws:logs:us-east-1:259984666282:log-group:/aws/kinesis-analytics/FlinkAppManual:log-stream:*"
+              - Sid: "KinesisStreams"
                 Effect: "Allow"
-                Action: "logs:DescribeLogStreams"
-                Resource: "arn:aws:logs:us-east-1:259984666282:log-group:/aws/kinesis-analytics/FlinkAppManual:log-stream:*"
-              - Sid: "PutCloudwatchLogs"
-                Effect: "Allow"
-                Action: "logs:PutLogEvents"
-                Resource: "arn:aws:logs:us-east-1:259984666282:log-group:/aws/kinesis-analytics/FlinkAppManual:log-stream:kinesis-analytics-log-stream"
-              - Sid: "ReadInputStream"
-                Effect: "Allow"
-                Action: "kinesis:*"
-                Resource: "arn:aws:kinesis:us-east-1:259984666282:stream/TransactionsInputStream"
-              - Sid: "WriteOutputStream"
-                Effect: "Allow"
-                Action: "kinesis:*"
-                Resource: "arn:aws:kinesis:us-east-1:259984666282:stream/TransactionsOutputStream"
+                Action:
+                  - "kinesis:DescribeStream"
+                  - "kinesis:GetShardIterator"
+                  - "kinesis:GetRecords"
+                  - "kinesis:PutRecord"
+                  - "kinesis:PutRecords"
+                Resource:
+                  - "arn:aws:kinesis:us-east-1:259984666282:stream/TransactionsInputStream"
+                  - "arn:aws:kinesis:us-east-1:259984666282:stream/TransactionsOutputStream"
+
 
   FlinkApplication:
     Type: "AWS::KinesisAnalyticsV2::Application"
@@ -80,3 +83,9 @@ Resources:
             - PropertyGroupId: "ConsumerConfigProperties"
               PropertyMap:
                 "aws.region": "us-east-1"
+        FlinkApplicationConfiguration:
+          MonitoringConfiguration:
+            ConfigurationType: "CUSTOM"
+            LogLevel: "INFO"
+            MetricsLevel: "TASK"
+            LogDestination: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/kinesis-analytics/${FlinkApplication}:log-stream:*"
