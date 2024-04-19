@@ -59,7 +59,6 @@ Resources:
                   - "arn:aws:kinesis:us-east-1:259984666282:stream/TransactionsInputStream"
                   - "arn:aws:kinesis:us-east-1:259984666282:stream/TransactionsOutputStream"
 
-
   FlinkApplication:
     Type: "AWS::KinesisAnalyticsV2::Application"
     Properties:
@@ -89,3 +88,58 @@ Resources:
             LogLevel: "INFO"
             MetricsLevel: "TASK"
             LogDestination: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/kinesis-analytics/${FlinkApplication}:log-stream:*"
+
+  StartFlinkApplicationFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: "index.handler"
+      Role: !GetAtt StartFlinkApplicationRole.Arn
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          def handler(event, context):
+              client = boto3.client('kinesisanalyticsv2')
+              try:
+                  response = client.start_application(ApplicationName=event['ResourceProperties']['ApplicationName'])
+                  return {'StatusCode': '200', 'Body': json.dumps(response)}
+              except Exception as e:
+                  return {'StatusCode': '400', 'Body': str(e)}
+      Runtime: "python3.8"
+
+  StartFlinkApplicationRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "LambdaFlinkStarterPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "kinesisanalytics:StartApplication"
+                Resource: !GetAtt FlinkApplication.Arn
+              - Effect: "Allow"
+                Action: "logs:CreateLogGroup"
+                Resource: "arn:aws:logs:*:*:*"
+              - Effect: "Allow"
+                Action: "logs:CreateLogStream"
+                Resource: "arn:aws:logs:*:*:*"
+              - Effect: "Allow"
+                Action: "logs:PutLogEvents"
+                Resource: "arn:aws:logs:*:*:*"
+
+  StartFlinkApplicationTrigger:
+    Type: "Custom::StartFlinkApp"
+    Properties:
+      ServiceToken: !GetAtt StartFlinkApplicationFunction.Arn
+      ApplicationName: !Ref FlinkApplication
+
+
+
