@@ -87,7 +87,6 @@ Resources:
             ConfigurationType: "CUSTOM"
             LogLevel: "INFO"
             MetricsLevel: "TASK"
-            LogDestination: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/kinesis-analytics/${AWS::StackName}:log-stream:*"
 
   StartFlinkApplicationFunction:
     Type: "AWS::Lambda::Function"
@@ -124,7 +123,7 @@ Resources:
             Statement:
               - Effect: "Allow"
                 Action: "kinesisanalytics:StartApplication"
-                Resource: !GetAtt FlinkApplication.Arn
+                Resource: !Sub "arn:aws:kinesisanalytics:${AWS::Region}:${AWS::AccountId}:application/${FlinkApplication}"
               - Effect: "Allow"
                 Action: "logs:CreateLogGroup"
                 Resource: "arn:aws:logs:*:*:*"
