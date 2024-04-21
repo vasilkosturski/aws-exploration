@@ -55,6 +55,7 @@ Resources:
                   - "kinesis:GetRecords"
                   - "kinesis:PutRecord"
                   - "kinesis:PutRecords"
+                  - "kinesis:ListShards"
                 Resource:
                   - "arn:aws:kinesis:us-east-1:259984666282:stream/TransactionsInputStream"
                   - "arn:aws:kinesis:us-east-1:259984666282:stream/TransactionsOutputStream"
