@@ -93,18 +93,63 @@ Resources:
     Type: "AWS::Lambda::Function"
     Properties:
       Handler: "index.handler"
+      Timeout: 30
       Role: !GetAtt StartFlinkApplicationRole.Arn
       Code:
         ZipFile: |
+          import logging
           import json
           import boto3
+          
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          
           def handler(event, context):
-              client = boto3.client('kinesisanalyticsv2')
-              try:
-                  response = client.start_application(ApplicationName=event['ResourceProperties']['ApplicationName'])
-                  return {'StatusCode': '200', 'Body': json.dumps(response)}
-              except Exception as e:
-                  return {'StatusCode': '400', 'Body': str(e)}
+            logger.info('Incoming CFN event {}'.format(event))
+          
+            responseData = {}
+            try:
+              application_name = event['ResourceProperties']['ApplicationName']
+        
+              # filter out events other than Create or Update,
+              # you can also omit Update in order to start an application on Create only.
+              if event['RequestType'] not in ["Create", "Update"]:
+                logger.info('No-op for Application {} because CFN RequestType {} is filtered'.format(application_name, event['RequestType'])) 
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                
+                return
+        
+              # use kinesisanalyticsv2 API to start an application.
+              client_kda = boto3.client('kinesisanalyticsv2', region_name=event['ResourceProperties']['Region'])
+              
+              # get application status.
+              describe_response = client_kda.describe_application(ApplicationName=application_name)
+              application_status = describe_response['ApplicationDetail']['ApplicationStatus']
+              
+              # an application can be started from 'READY' status only.
+              if application_status != 'READY':
+                logger.info('No-op for Application {} because ApplicationStatus {} is filtered'.format(application_name, application_status)) 
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                
+                return
+        
+              # create RunConfiguration. 
+              run_configuration = { 
+                'ApplicationRestoreConfiguration': {
+                  'ApplicationRestoreType': 'RESTORE_FROM_LATEST_SNAPSHOT',
+                }
+              }
+        
+              logger.info('RunConfiguration for Application {}: {}'.format(application_name, run_configuration)) 
+              
+              # this call doesn't wait for an application to transfer to 'RUNNING' state.
+              client_kda.start_application(ApplicationName=application_name, RunConfiguration=run_configuration)
+        
+              logger.info('Started Application: {}'.format(application_name)) 
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+            except Exception as e:
+              logger.error(err)
+              cfnresponse.send(event,context, cfnresponse.FAILED, {"Data": str(err)})
       Runtime: "python3.8"
 
   StartFlinkApplicationRole:
