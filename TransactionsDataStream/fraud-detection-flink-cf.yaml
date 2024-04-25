@@ -100,6 +100,7 @@ Resources:
           import logging
           import json
           import boto3
+          import cfnresponse
           
           logger = logging.getLogger()
           logger.setLevel(logging.INFO)
@@ -110,17 +111,17 @@ Resources:
             responseData = {}
             try:
               application_name = event['ResourceProperties']['ApplicationName']
-        
+          
               # filter out events other than Create or Update,
               # you can also omit Update in order to start an application on Create only.
               if event['RequestType'] not in ["Create", "Update"]:
                 logger.info('No-op for Application {} because CFN RequestType {} is filtered'.format(application_name, event['RequestType'])) 
                 cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
-                
                 return
         
               # use kinesisanalyticsv2 API to start an application.
-              client_kda = boto3.client('kinesisanalyticsv2', region_name=event['ResourceProperties']['Region'])
+              region = context.invoked_function_arn.split(":")[3]
+              client_kda = boto3.client('kinesisanalyticsv2', region_name=region)
               
               # get application status.
               describe_response = client_kda.describe_application(ApplicationName=application_name)
@@ -130,7 +131,6 @@ Resources:
               if application_status != 'READY':
                 logger.info('No-op for Application {} because ApplicationStatus {} is filtered'.format(application_name, application_status)) 
                 cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
-                
                 return
         
               # create RunConfiguration. 
@@ -147,7 +147,7 @@ Resources:
         
               logger.info('Started Application: {}'.format(application_name)) 
               cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
-            except Exception as e:
+            except Exception as err:
               logger.error(err)
               cfnresponse.send(event,context, cfnresponse.FAILED, {"Data": str(err)})
       Runtime: "python3.8"
@@ -168,7 +168,9 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: "Allow"
-                Action: "kinesisanalytics:StartApplication"
+                Action:
+                  - "kinesisanalytics:StartApplication"
+                  - "kinesisanalytics:DescribeApplication"
                 Resource: !Sub "arn:aws:kinesisanalytics:${AWS::Region}:${AWS::AccountId}:application/${FlinkApplication}"
               - Effect: "Allow"
                 Action: "logs:CreateLogGroup"
