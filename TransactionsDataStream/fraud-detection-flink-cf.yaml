@@ -45,8 +45,8 @@ Resources:
                   - "logs:DescribeLogStreams"
                   - "logs:PutLogEvents"
                 Resource:
-                  - "arn:aws:logs:us-east-1:259984666282:log-group:/aws/kinesis-analytics/FlinkAppManual:*"
-                  - "arn:aws:logs:us-east-1:259984666282:log-group:/aws/kinesis-analytics/FlinkAppManual:log-stream:*"
+                  - "arn:aws:logs:us-east-1:259984666282:log-group:/aws/kinesis-analytics/FlinkTransactionProcessing:*"
+                  - "arn:aws:logs:us-east-1:259984666282:log-group:/aws/kinesis-analytics/FlinkTransactionProcessing:log-stream:*"
               - Sid: "KinesisStreams"
                 Effect: "Allow"
                 Action:
@@ -173,17 +173,17 @@ Resources:
                   - "kinesisanalytics:DescribeApplication"
                 Resource: !Sub "arn:aws:kinesisanalytics:${AWS::Region}:${AWS::AccountId}:application/${FlinkApplication}"
               - Effect: "Allow"
-                Action: "logs:CreateLogGroup"
-                Resource: "arn:aws:logs:*:*:*"
-              - Effect: "Allow"
-                Action: "logs:CreateLogStream"
-                Resource: "arn:aws:logs:*:*:*"
-              - Effect: "Allow"
-                Action: "logs:PutLogEvents"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
                 Resource: "arn:aws:logs:*:*:*"
 
   StartFlinkApplicationTrigger:
     Type: "Custom::StartFlinkApp"
+    DependsOn:
+      - FlinkApplication
+      - StartFlinkApplicationFunction
     Properties:
       ServiceToken: !GetAtt StartFlinkApplicationFunction.Arn
       ApplicationName: !Ref FlinkApplication
