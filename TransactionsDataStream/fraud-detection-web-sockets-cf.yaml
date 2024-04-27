@@ -323,9 +323,6 @@ Resources:
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*/$disconnect
 
 Outputs:
-  KinesisStreamArn:
-    Description: "ARN of the Kinesis Stream"
-    Value: !GetAtt TransactionsOutputStream.Arn
 
   LambdaFunctionArn:
     Description: "ARN of the Lambda Function"
