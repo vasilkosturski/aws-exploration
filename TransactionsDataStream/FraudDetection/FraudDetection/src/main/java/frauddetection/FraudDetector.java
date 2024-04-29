@@ -1,7 +1,9 @@
 package frauddetection;
 
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kinesis.sink.KinesisStreamsSink;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
@@ -15,15 +17,18 @@ public class FraudDetector {
     private static final String inputStreamName = "TransactionsInputStream";
     private static final String outputStreamName = "TransactionsOutputStream";
 
-    private static DataStream<String> createSourceFromStaticConfig(StreamExecutionEnvironment env) {
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    private static DataStream<Transaction> createSource(StreamExecutionEnvironment env) {
         Properties inputProperties = new Properties();
         inputProperties.setProperty(ConsumerConfigConstants.AWS_REGION, region);
         inputProperties.setProperty(ConsumerConfigConstants.STREAM_INITIAL_POSITION, "LATEST");
 
-        return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties));
+        return env.addSource(new FlinkKinesisConsumer<>(inputStreamName, new SimpleStringSchema(), inputProperties))
+                .map((MapFunction<String, Transaction>) value -> mapper.readValue(value, Transaction.class));
     }
 
-    private static KinesisStreamsSink<String> createSinkFromStaticConfig() {
+    private static KinesisStreamsSink<String> createSink() {
         Properties outputProperties = new Properties();
         outputProperties.setProperty(AWSConfigConstants.AWS_REGION, region);
 
@@ -38,10 +43,18 @@ public class FraudDetector {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        DataStream<String> input = createSourceFromStaticConfig(env);
+        DataStream<Transaction> transactions = createSource(env);
 
-        input.sinkTo(createSinkFromStaticConfig());
+        DataStream<Alert> alerts = transactions
+                .keyBy(Transaction::getAccountId)
+                .process(new FraudDetectionFunction())
+                .name("fraud-detector");
 
-        env.execute("Flink Streaming Java API Skeleton");
+        DataStream<String> alertStrings = alerts.map((MapFunction<Alert, String>) alert ->
+                mapper.writeValueAsString(alert));
+
+        alertStrings.sinkTo(createSink());
+
+        env.execute("Enhanced Fraud Detection with Kinesis Integration");
     }
 }
