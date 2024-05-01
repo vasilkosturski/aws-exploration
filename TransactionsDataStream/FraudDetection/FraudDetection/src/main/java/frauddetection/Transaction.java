@@ -3,24 +3,24 @@ package frauddetection;
 import java.util.Objects;
 
 public class Transaction {
-    private long accountId;
+    private String accountId;
     private long timestamp;
     private double amount;
 
     public Transaction() {
     }
 
-    public Transaction(long accountId, long timestamp, double amount) {
+    public Transaction(String accountId, long timestamp, double amount) {
         this.accountId = accountId;
         this.timestamp = timestamp;
         this.amount = amount;
     }
 
-    public long getAccountId() {
+    public String getAccountId() {
         return this.accountId;
     }
 
-    public void setAccountId(long accountId) {
+    public void setAccountId(String accountId) {
         this.accountId = accountId;
     }
 

@@ -3,16 +3,16 @@ package frauddetection;
 import java.util.Objects;
 
 public class Alert {
-    private long id;
+    private String id;
 
     public Alert() {
     }
 
-    public long getId() {
+    public String getId() {
         return this.id;
     }
 
-    public void setId(long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

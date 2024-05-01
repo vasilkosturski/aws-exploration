@@ -7,7 +7,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
-public class FraudDetectionFunction extends KeyedProcessFunction<Long, Transaction, Alert> {
+public class FraudDetectionFunction extends KeyedProcessFunction<String, Transaction, Alert> {
     private static final long serialVersionUID = 1L;
 
     private static final double SMALL_AMOUNT = 1.00;
