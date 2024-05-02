@@ -6,18 +6,21 @@ public class Transaction {
     private String accountId;
     private long timestamp;
     private double amount;
+    private String eventTime; // Add this field to store event time
 
     public Transaction() {
     }
 
-    public Transaction(String accountId, long timestamp, double amount) {
+    public Transaction(String accountId, long timestamp, double amount, String eventTime) {
         this.accountId = accountId;
         this.timestamp = timestamp;
         this.amount = amount;
+        this.eventTime = eventTime; // Initialize the new field
     }
 
+    // Getters and setters for all fields
     public String getAccountId() {
-        return this.accountId;
+        return accountId;
     }
 
     public void setAccountId(String accountId) {
@@ -25,7 +28,7 @@ public class Transaction {
     }
 
     public long getTimestamp() {
-        return this.timestamp;
+        return timestamp;
     }
 
     public void setTimestamp(long timestamp) {
@@ -33,29 +36,44 @@ public class Transaction {
     }
 
     public double getAmount() {
-        return this.amount;
+        return amount;
     }
 
     public void setAmount(double amount) {
         this.amount = amount;
     }
 
+    public String getEventTime() {
+        return eventTime;
+    }
+
+    public void setEventTime(String eventTime) {
+        this.eventTime = eventTime;
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        } else if (o != null && this.getClass() == o.getClass()) {
-            Transaction that = (Transaction)o;
-            return this.accountId == that.accountId && this.timestamp == that.timestamp && Double.compare(that.amount, this.amount) == 0;
-        } else {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Transaction that = (Transaction) o;
+        return accountId.equals(that.accountId) &&
+                timestamp == that.timestamp &&
+                Double.compare(that.amount, amount) == 0 &&
+                eventTime.equals(that.eventTime);
     }
 
+    @Override
     public int hashCode() {
-        return Objects.hash(this.accountId, this.timestamp, this.amount);
+        return Objects.hash(accountId, timestamp, amount, eventTime);
     }
 
+    @Override
     public String toString() {
-        return "Transaction{accountId=" + this.accountId + ", timestamp=" + this.timestamp + ", amount=" + this.amount + '}';
+        return "Transaction{" +
+                "accountId='" + accountId + '\'' +
+                ", timestamp=" + timestamp +
+                ", amount=" + amount +
+                ", eventTime='" + eventTime + '\'' +
+                '}';
     }
 }
