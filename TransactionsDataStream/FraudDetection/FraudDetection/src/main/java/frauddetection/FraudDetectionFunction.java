@@ -1,15 +1,21 @@
 package frauddetection;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 public class FraudDetectionFunction extends KeyedProcessFunction<String, Transaction, Alert> {
+    private static final Logger LOG = LoggerFactory.getLogger(FraudDetectionFunction.class);
+
     private static final long serialVersionUID = 1L;
 
     private static final double SMALL_AMOUNT = 1.00;
@@ -33,36 +39,37 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
     }
 
     @Override
-    public void processElement(
-            Transaction transaction,
-            Context context,
-            Collector<Alert> collector) throws Exception {
-
+    public void processElement(Transaction transaction, Context context, Collector<Alert> collector) throws Exception {
         long eventTime = parseEventTime(transaction.getEventTime());
         Long lastEventTime = lastTransactionEventTime.value();
+        LOG.debug("Processing transaction: {}", transaction);
 
         if (lastEventTime != null) {
             long timeDelta = eventTime - lastEventTime;
+            LOG.debug("Time delta: {}", timeDelta);
 
             if (smallTransactionFlag.value() != null && smallTransactionFlag.value() && transaction.getAmount() > LARGE_AMOUNT && timeDelta < SUSPICIOUS_TIME_DELTA) {
                 Alert alert = new Alert();
                 alert.setId(transaction.getAccountId());
                 collector.collect(alert);
+                LOG.info("Alert generated: {}", alert);
             }
         }
 
         if (transaction.getAmount() < SMALL_AMOUNT) {
-            smallTransactionFlag.update(true);  // Flag this transaction as small
+            smallTransactionFlag.update(true);
         } else {
-            smallTransactionFlag.update(false); // Reset flag if the transaction is not small
+            smallTransactionFlag.update(false);
         }
 
-        lastTransactionEventTime.update(eventTime); // Always update the last transaction event time
+        lastTransactionEventTime.update(eventTime);
     }
 
     private long parseEventTime(String eventTime) {
         try {
-            return Instant.parse(eventTime).toEpochMilli();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
+            LocalDateTime localDateTime = LocalDateTime.parse(eventTime, formatter);
+            return localDateTime.atZone(ZoneId.of("UTC")).toInstant().toEpochMilli();
         } catch (DateTimeParseException e) {
             throw new RuntimeException("Failed to parse event time: " + eventTime, e);
         }

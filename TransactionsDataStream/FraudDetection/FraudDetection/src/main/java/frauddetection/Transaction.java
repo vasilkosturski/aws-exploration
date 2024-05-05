@@ -4,9 +4,9 @@ import java.util.Objects;
 
 public class Transaction {
     private String accountId;
-    private long timestamp;
+    private long timestamp; // is the timestamp needed?
     private double amount;
-    private String eventTime; // Add this field to store event time
+    private String eventTime;
 
     public Transaction() {
     }
@@ -15,7 +15,7 @@ public class Transaction {
         this.accountId = accountId;
         this.timestamp = timestamp;
         this.amount = amount;
-        this.eventTime = eventTime; // Initialize the new field
+        this.eventTime = eventTime;
     }
 
     // Getters and setters for all fields
