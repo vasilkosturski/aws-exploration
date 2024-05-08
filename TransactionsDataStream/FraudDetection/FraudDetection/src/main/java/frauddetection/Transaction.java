@@ -4,16 +4,14 @@ import java.util.Objects;
 
 public class Transaction {
     private String accountId;
-    private long timestamp; // is the timestamp needed?
     private double amount;
     private String eventTime;
 
     public Transaction() {
     }
 
-    public Transaction(String accountId, long timestamp, double amount, String eventTime) {
+    public Transaction(String accountId, double amount, String eventTime) {
         this.accountId = accountId;
-        this.timestamp = timestamp;
         this.amount = amount;
         this.eventTime = eventTime;
     }
@@ -25,14 +23,6 @@ public class Transaction {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
     }
 
     public double getAmount() {
@@ -57,21 +47,19 @@ public class Transaction {
         if (o == null || getClass() != o.getClass()) return false;
         Transaction that = (Transaction) o;
         return accountId.equals(that.accountId) &&
-                timestamp == that.timestamp &&
                 Double.compare(that.amount, amount) == 0 &&
                 eventTime.equals(that.eventTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(accountId, timestamp, amount, eventTime);
+        return Objects.hash(accountId, amount, eventTime);
     }
 
     @Override
     public String toString() {
         return "Transaction{" +
                 "accountId='" + accountId + '\'' +
-                ", timestamp=" + timestamp +
                 ", amount=" + amount +
                 ", eventTime='" + eventTime + '\'' +
                 '}';
