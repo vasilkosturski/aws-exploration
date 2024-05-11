@@ -20,7 +20,7 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
 
     private static final double SMALL_AMOUNT = 1.00;
     private static final double LARGE_AMOUNT = 500.00;
-    private static final long SUSPICIOUS_TIME_DELTA = 60 * 1000;  // 1 minute in milliseconds
+    private static final long SUSPICIOUS_TIME_DELTA = 60 * 1000;
 
     private transient ValueState<Boolean> smallTransactionFlag;
     private transient ValueState<Long> lastTransactionEventTime;
