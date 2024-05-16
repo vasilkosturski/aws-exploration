@@ -30,7 +30,7 @@ public class FraudDetector {
                 .map((MapFunction<String, Transaction>) value -> mapper.readValue(value, Transaction.class));
     }
 
-    public void build(StreamExecutionEnvironment env) throws Exception {
+    public void build(StreamExecutionEnvironment env) {
         DataStream<Transaction> transactions = createSource(env, source);
 
         DataStream<Alert> alerts = transactions
@@ -42,8 +42,6 @@ public class FraudDetector {
                 mapper.writeValueAsString(alert));
 
         alertStrings.sinkTo(sink);
-
-        env.execute("Enhanced Fraud Detection with Generic Integration");
     }
 
     public static void main(String[] args) throws Exception {
@@ -64,5 +62,6 @@ public class FraudDetector {
                 .build();
 
         new FraudDetector(consumer, sink).build(env);
+        env.execute("Fraud Detection");
     }
 }

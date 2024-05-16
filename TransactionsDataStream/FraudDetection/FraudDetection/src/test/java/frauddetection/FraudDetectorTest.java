@@ -35,13 +35,12 @@ public class FraudDetectorTest {
 
     @Test
     public void testFraudDetection() throws Exception {
-        new FraudDetector(testSource, collectingSink).build(env);
-
-        env.execute("Test Fraud Detection");
+        FraudDetector fraudDetector = new FraudDetector(testSource, collectingSink);
+        fraudDetector.build(env);
+        env.execute("Test Fraud Detection");  // Ensure this is the only place `execute` is called for this environment.
 
         List<String> results = CollectingSink.getValues();
         assertEquals("Expected only one fraudulent alert", 1, results.size());
-
         String expectedJson = "{\"accountId\":\"12345\", \"alert\":\"High transaction amount detected\"}";
         assertTrue("Expected alert not found in the output", results.contains(expectedJson));
     }
