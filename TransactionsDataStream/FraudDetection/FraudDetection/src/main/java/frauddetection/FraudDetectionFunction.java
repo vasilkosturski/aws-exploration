@@ -8,9 +8,8 @@ import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+
+import java.time.Instant;
 import java.time.format.DateTimeParseException;
 
 public class FraudDetectionFunction extends KeyedProcessFunction<String, Transaction, Alert> {
@@ -67,9 +66,8 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
 
     private long parseEventTime(String eventTime) {
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
-            LocalDateTime localDateTime = LocalDateTime.parse(eventTime, formatter);
-            return localDateTime.atZone(ZoneId.of("UTC")).toInstant().toEpochMilli();
+            // Parses the date-time string which should be in ISO-8601 format directly to an Instant
+            return Instant.parse(eventTime).toEpochMilli();
         } catch (DateTimeParseException e) {
             throw new RuntimeException("Failed to parse event time: " + eventTime, e);
         }
