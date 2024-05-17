@@ -10,10 +10,12 @@ public class TestTransactionSource implements SourceFunction<String> {
 
     @Override
     public void run(SourceContext<String> ctx) throws Exception {
-        // Array of transactions to emit
         Transaction[] transactions = new Transaction[] {
-                new Transaction("12345", 100.0, "2023-05-15T12:00:00Z"),
-                new Transaction("12345", 5000.0, "2023-05-15T12:05:00Z"),
+                // Small transaction
+                new Transaction("12345", 0.99, "2023-05-15T12:00:00Z"),
+                // Large transaction within 60 seconds
+                new Transaction("12345", 501.00, "2023-05-15T12:00:50Z"),
+                // Normal transaction
                 new Transaction("67890", 20.0, "2023-05-15T12:10:00Z")
         };
 

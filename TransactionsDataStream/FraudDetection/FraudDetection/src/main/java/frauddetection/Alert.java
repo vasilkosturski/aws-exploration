@@ -32,6 +32,6 @@ public class Alert {
     }
 
     public String toString() {
-        return "Alert{id=" + this.id + '}';
+        return "Alert{accountId=" + this.id + '}';
     }
 }

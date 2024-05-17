@@ -22,7 +22,6 @@ public class FraudDetectorTest {
     public static MiniClusterWithClientResource flinkCluster =
             new MiniClusterWithClientResource(
                     new MiniClusterResourceConfiguration.Builder()
-                            .setNumberSlotsPerTaskManager(2)
                             .setNumberTaskManagers(1)
                             .build());
 
@@ -41,7 +40,7 @@ public class FraudDetectorTest {
 
         List<String> results = CollectingSink.getValues();
         assertEquals("Expected only one fraudulent alert", 1, results.size());
-        String expectedJson = "{\"accountId\":\"12345\", \"alert\":\"High transaction amount detected\"}";
+        String expectedJson = "{\"accountId\":\"12345\"}";
         assertTrue("Expected alert not found in the output", results.contains(expectedJson));
     }
 
