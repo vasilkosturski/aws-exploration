@@ -49,7 +49,7 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
 
             if (smallTransactionFlag.value() != null && smallTransactionFlag.value() && transaction.getAmount() > LARGE_AMOUNT && timeDelta < SUSPICIOUS_TIME_DELTA) {
                 Alert alert = new Alert();
-                alert.setId(transaction.getAccountId());
+                alert.setAccountId(transaction.getAccountId());
                 collector.collect(alert);
                 LOG.info("Alert generated: {}", alert);
             }

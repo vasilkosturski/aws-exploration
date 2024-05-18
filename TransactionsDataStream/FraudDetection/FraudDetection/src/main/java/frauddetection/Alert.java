@@ -3,17 +3,17 @@ package frauddetection;
 import java.util.Objects;
 
 public class Alert {
-    private String id;
+    private String accountId;
 
     public Alert() {
     }
 
-    public String getId() {
-        return this.id;
+    public String getAccountId() {
+        return this.accountId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
     public boolean equals(Object o) {
@@ -21,17 +21,17 @@ public class Alert {
             return true;
         } else if (o != null && this.getClass() == o.getClass()) {
             Alert alert = (Alert)o;
-            return this.id == alert.id;
+            return this.accountId == alert.accountId;
         } else {
             return false;
         }
     }
 
     public int hashCode() {
-        return Objects.hash(this.id);
+        return Objects.hash(this.accountId);
     }
 
     public String toString() {
-        return "Alert{accountId=" + this.id + '}';
+        return "Alert{accountId=" + this.accountId + '}';
     }
 }
