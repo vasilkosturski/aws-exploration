@@ -3,7 +3,6 @@ package frauddetection;
 import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,11 +36,11 @@ public class CollectingSink implements Sink<String> {
         }
 
         @Override
-        public void flush(boolean b) throws IOException, InterruptedException {
+        public void flush(boolean b) {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
         }
     }
 }
