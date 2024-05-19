@@ -15,7 +15,6 @@ import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConsta
 import java.util.Properties;
 
 public class FraudDetector {
-
     private final SourceFunction<String> source;
     private final Sink<String> sink;
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -25,13 +24,9 @@ public class FraudDetector {
         this.sink = sink;
     }
 
-    private static DataStream<Transaction> createSource(StreamExecutionEnvironment env, SourceFunction<String> sourceFunction) {
-        return env.addSource(sourceFunction)
-                .map((MapFunction<String, Transaction>) value -> mapper.readValue(value, Transaction.class));
-    }
-
     public void build(StreamExecutionEnvironment env) {
-        DataStream<Transaction> transactions = createSource(env, source);
+        DataStream<Transaction> transactions = env.addSource(source)
+                .map((MapFunction<String, Transaction>) value -> mapper.readValue(value, Transaction.class));
 
         DataStream<Alert> alerts = transactions
                 .keyBy(Transaction::getAccountId)
