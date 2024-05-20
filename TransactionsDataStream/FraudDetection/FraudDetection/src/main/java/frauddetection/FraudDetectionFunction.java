@@ -12,7 +12,7 @@ import org.apache.flink.util.Collector;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 
-public class FraudDetectionFunction extends KeyedProcessFunction<String, Transaction, Alert> {
+public class FraudDetectionFunction extends KeyedProcessFunction<String, Transaction, FraudAlert> {
     private static final Logger LOG = LoggerFactory.getLogger(FraudDetectionFunction.class);
 
     private static final double SMALL_AMOUNT = 1.00;
@@ -36,7 +36,7 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
     }
 
     @Override
-    public void processElement(Transaction transaction, Context context, Collector<Alert> collector) throws Exception {
+    public void processElement(Transaction transaction, Context context, Collector<FraudAlert> collector) throws Exception {
         long eventTime = parseEventTime(transaction.getEventTime());
         Long lastEventTime = lastTransactionEventTime.value();
         LOG.debug("Processing transaction: {}", transaction);
@@ -45,9 +45,11 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
             long timeDelta = eventTime - lastEventTime;
             LOG.debug("Time delta: {}", timeDelta);
 
-            if (smallTransactionFlag.value() != null && smallTransactionFlag.value() &&
-                    transaction.getAmount() > LARGE_AMOUNT && timeDelta < SUSPICIOUS_TIME_DELTA) {
-                Alert alert = new Alert();
+            boolean isFraud = smallTransactionFlag.value() != null && smallTransactionFlag.value() &&
+                    transaction.getAmount() > LARGE_AMOUNT && timeDelta < SUSPICIOUS_TIME_DELTA;
+
+            if (isFraud) {
+                FraudAlert alert = new FraudAlert();
                 alert.setAccountId(transaction.getAccountId());
                 collector.collect(alert);
                 LOG.info("Alert generated: {}", alert);

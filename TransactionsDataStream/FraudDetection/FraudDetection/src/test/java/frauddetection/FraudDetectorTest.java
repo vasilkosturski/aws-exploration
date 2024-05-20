@@ -16,29 +16,27 @@ import static org.junit.Assert.assertTrue;
 public class FraudDetectorTest {
     private StreamExecutionEnvironment env;
     private TestTransactionSource testSource;
-    private CollectingSink collectingSink;
+    private TestFraudAlertSink testSink;
 
     @ClassRule
     public static MiniClusterWithClientResource flinkCluster =
             new MiniClusterWithClientResource(
-                    new MiniClusterResourceConfiguration.Builder()
-                            .setNumberTaskManagers(1)
-                            .build());
+                    new MiniClusterResourceConfiguration.Builder().build());
 
     @Before
     public void setUp() {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         testSource = new TestTransactionSource();
-        collectingSink = new CollectingSink();
+        testSink = new TestFraudAlertSink();
     }
 
     @Test
     public void testFraudDetection() throws Exception {
-        FraudDetector fraudDetector = new FraudDetector(testSource, collectingSink);
+        FraudDetector fraudDetector = new FraudDetector(testSource, testSink);
         fraudDetector.build(env);
         env.execute("Test Fraud Detection");  // Ensure this is the only place `execute` is called for this environment.
 
-        List<String> results = CollectingSink.getValues();
+        List<String> results = TestFraudAlertSink.getValues();
         assertEquals("Expected only one fraudulent alert", 1, results.size());
         String expectedJson = "{\"accountId\":\"12345\"}";
         assertTrue("Expected alert not found in the output", results.contains(expectedJson));
@@ -46,6 +44,6 @@ public class FraudDetectorTest {
 
     @After
     public void tearDown() {
-        CollectingSink.clear();
+        TestFraudAlertSink.clear();
     }
 }

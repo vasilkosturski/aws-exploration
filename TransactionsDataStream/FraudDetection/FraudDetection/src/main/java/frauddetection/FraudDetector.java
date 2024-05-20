@@ -28,12 +28,12 @@ public class FraudDetector {
         DataStream<Transaction> transactions = env.addSource(source)
                 .map((MapFunction<String, Transaction>) value -> mapper.readValue(value, Transaction.class));
 
-        DataStream<Alert> alerts = transactions
+        DataStream<FraudAlert> alerts = transactions
                 .keyBy(Transaction::getAccountId)
                 .process(new FraudDetectionFunction())
                 .name("fraud-detector");
 
-        DataStream<String> alertStrings = alerts.map((MapFunction<Alert, String>) alert ->
+        DataStream<String> alertStrings = alerts.map((MapFunction<FraudAlert, String>) alert ->
                 mapper.writeValueAsString(alert));
 
         alertStrings.sinkTo(sink);

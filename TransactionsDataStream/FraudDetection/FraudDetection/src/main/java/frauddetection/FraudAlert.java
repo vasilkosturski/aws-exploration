@@ -2,10 +2,10 @@ package frauddetection;
 
 import java.util.Objects;
 
-public class Alert {
+public class FraudAlert {
     private String accountId;
 
-    public Alert() {
+    public FraudAlert() {
     }
 
     public String getAccountId() {
@@ -20,7 +20,7 @@ public class Alert {
         if (this == o) {
             return true;
         } else if (o != null && this.getClass() == o.getClass()) {
-            Alert alert = (Alert)o;
+            FraudAlert alert = (FraudAlert)o;
             return this.accountId == alert.accountId;
         } else {
             return false;

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class CollectingSink implements Sink<String> {
+public class TestFraudAlertSink implements Sink<String> {
     private static final List<String> values = Collections.synchronizedList(new ArrayList<>());
 
     @Override
