@@ -15,7 +15,7 @@ import java.time.format.DateTimeParseException;
 public class FraudDetectionFunction extends KeyedProcessFunction<String, Transaction, FraudAlert> {
     private static final Logger LOG = LoggerFactory.getLogger(FraudDetectionFunction.class);
 
-    private static final double SMALL_AMOUNT = 1.00;
+    private static final double SMALL_AMOUNT = 10.00;
     private static final double LARGE_AMOUNT = 500.00;
     private static final long SUSPICIOUS_TIME_DELTA = 60 * 1000;
 

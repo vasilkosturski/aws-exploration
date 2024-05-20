@@ -38,7 +38,7 @@ public class FraudDetectorTest {
 
         List<String> results = TestFraudAlertSink.getValues();
         assertEquals("Expected only one fraudulent alert", 1, results.size());
-        String expectedJson = "{\"accountId\":\"12345\"}";
+        String expectedJson = "{\"accountId\":\"acc123\"}";
         assertTrue("Expected alert not found in the output", results.contains(expectedJson));
     }
 
