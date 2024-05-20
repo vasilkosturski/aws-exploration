@@ -15,8 +15,6 @@ import java.time.format.DateTimeParseException;
 public class FraudDetectionFunction extends KeyedProcessFunction<String, Transaction, Alert> {
     private static final Logger LOG = LoggerFactory.getLogger(FraudDetectionFunction.class);
 
-    private static final long serialVersionUID = 1L;
-
     private static final double SMALL_AMOUNT = 1.00;
     private static final double LARGE_AMOUNT = 500.00;
     private static final long SUSPICIOUS_TIME_DELTA = 60 * 1000;
@@ -47,7 +45,8 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
             long timeDelta = eventTime - lastEventTime;
             LOG.debug("Time delta: {}", timeDelta);
 
-            if (smallTransactionFlag.value() != null && smallTransactionFlag.value() && transaction.getAmount() > LARGE_AMOUNT && timeDelta < SUSPICIOUS_TIME_DELTA) {
+            if (smallTransactionFlag.value() != null && smallTransactionFlag.value() &&
+                    transaction.getAmount() > LARGE_AMOUNT && timeDelta < SUSPICIOUS_TIME_DELTA) {
                 Alert alert = new Alert();
                 alert.setAccountId(transaction.getAccountId());
                 collector.collect(alert);
@@ -55,11 +54,7 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
             }
         }
 
-        if (transaction.getAmount() < SMALL_AMOUNT) {
-            smallTransactionFlag.update(true);
-        } else {
-            smallTransactionFlag.update(false);
-        }
+        smallTransactionFlag.update(transaction.getAmount() < SMALL_AMOUNT);
 
         lastTransactionEventTime.update(eventTime);
     }
