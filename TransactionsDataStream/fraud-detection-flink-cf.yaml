@@ -89,6 +89,13 @@ Resources:
             LogLevel: "INFO"
             MetricsLevel: "TASK"
 
+  FlinkApplicationCloudWatchLoggingOption:
+    Type: "AWS::KinesisAnalyticsV2::ApplicationCloudWatchLoggingOption"
+    Properties:
+      ApplicationName: !Ref FlinkApplication
+      CloudWatchLoggingOption:
+        LogStreamARN: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/kinesis-analytics/FlinkTransactionProcessing:log-stream:kinesis-analytics-log-stream"
+
   StartFlinkApplicationFunction:
     Type: "AWS::Lambda::Function"
     Properties:
