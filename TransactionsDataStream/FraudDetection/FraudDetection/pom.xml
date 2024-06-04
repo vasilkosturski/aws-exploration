@@ -21,7 +21,7 @@
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-bom</artifactId>
         <!-- Get the latest SDK version from https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-bom -->
-        <version>1.12.281</version>
+        <version>1.12.734</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -38,13 +38,13 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-connector-kinesis</artifactId>
-      <version>1.16.3</version>
+      <version>4.1.0-1.16</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-connector-aws-kinesis-streams</artifactId>
-      <version>1.16.3</version>
+      <version>4.1.0-1.16</version>
     </dependency>
 
     <dependency>
@@ -76,7 +76,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>3.11.2</version>
+      <version>5.12.0</version>
       <scope>test</scope>
     </dependency>
 
