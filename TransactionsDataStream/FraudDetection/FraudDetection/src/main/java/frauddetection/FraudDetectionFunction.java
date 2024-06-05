@@ -64,7 +64,6 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
 
     private long parseEventTime(String eventTime) {
         try {
-            // Parses the date-time string which should be in ISO-8601 format directly to an Instant
             return Instant.parse(eventTime).toEpochMilli();
         } catch (DateTimeParseException e) {
             throw new RuntimeException("Failed to parse event time: " + eventTime, e);
