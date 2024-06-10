@@ -1,10 +1,9 @@
 import json
-import boto3
+from kafka import KafkaProducer
 from datetime import datetime, timedelta
 
-STREAM_NAME = 'TransactionsInputStream'
-
-kinesis_client = boto3.client('kinesis', region_name='us-east-1')
+KAFKA_TOPIC = 'TransactionsInputStream'
+KAFKA_BROKER = 'b-1.mskcluster.example.com:9092,b-2.mskcluster.example.com:9092,b-3.mskcluster.example.com:9092'  # Update with your MSK broker URLs
 
 start_time = datetime.now()
 
@@ -41,18 +40,21 @@ transactions = [
     {'accountId': 'acc8', 'amount': 2000, 'eventTime': increment_time(minutes=270, seconds=30)},
 ]
 
+producer = KafkaProducer(
+    bootstrap_servers=[KAFKA_BROKER],
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
 
 def send_transaction(transaction):
     transaction['eventTime'] = transaction['eventTime'].isoformat()
-    result = kinesis_client.put_record(
-        StreamName=STREAM_NAME,
-        Data=json.dumps(transaction),
-        PartitionKey=transaction['accountId']
-    )
+    future = producer.send(KAFKA_TOPIC, value=transaction, key=transaction['accountId'].encode('utf-8'))
+    result = future.get(timeout=10)
     print(f"Sent transaction for amount ${transaction['amount']} at {transaction['eventTime']}. "
-          f"Sequence number: {result['SequenceNumber']}")
+          f"Topic: {result.topic}, Partition: {result.partition}, Offset: {result.offset}")
 
 
 if __name__ == '__main__':
     for transaction in transactions:
         send_transaction(transaction)
+    producer.flush()
