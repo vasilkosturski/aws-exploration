@@ -1,16 +1,15 @@
 import json
 from kafka import KafkaProducer
 from datetime import datetime, timedelta
+from kafka.errors import KafkaError
 
-KAFKA_TOPIC = 'TransactionsInputStream'
-KAFKA_BROKER = 'b-1.mskcluster.example.com:9092,b-2.mskcluster.example.com:9092,b-3.mskcluster.example.com:9092'  # Update with your MSK broker URLs
+KAFKA_TOPIC = 'transactions-input'
+KAFKA_BROKER = 'boot-6n3agog8.c3.kafka-serverless.us-east-1.amazonaws.com:9098'
 
 start_time = datetime.now()
 
-
 def increment_time(minutes=0, seconds=0):
     return start_time + timedelta(minutes=minutes, seconds=seconds)
-
 
 transactions = [
     # Normal transactions for different accounts
@@ -41,18 +40,24 @@ transactions = [
 ]
 
 producer = KafkaProducer(
-    bootstrap_servers=[KAFKA_BROKER],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    bootstrap_servers=KAFKA_BROKER.split(','),
+    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+    security_protocol='SASL_SSL',
+    sasl_mechanism='AWS_MSK_IAM',
+    sasl_jass_config='software.amazon.msk.auth.iam.IAMLoginModule required;',
+    sasl_client_callback_handler_class='software.amazon.msk.auth.iam.IAMClientCallbackHandler',
+    aws_region='us-east-1'
 )
-
 
 def send_transaction(transaction):
     transaction['eventTime'] = transaction['eventTime'].isoformat()
     future = producer.send(KAFKA_TOPIC, value=transaction, key=transaction['accountId'].encode('utf-8'))
-    result = future.get(timeout=10)
-    print(f"Sent transaction for amount ${transaction['amount']} at {transaction['eventTime']}. "
-          f"Topic: {result.topic}, Partition: {result.partition}, Offset: {result.offset}")
-
+    try:
+        result = future.get(timeout=10)
+        print(f"Sent transaction for amount ${transaction['amount']} at {transaction['eventTime']}. "
+              f"Topic: {result.topic}, Partition: {result.partition}, Offset: {result.offset}")
+    except KafkaError as e:
+        print(f"Failed to send transaction: {e}")
 
 if __name__ == '__main__':
     for transaction in transactions:
