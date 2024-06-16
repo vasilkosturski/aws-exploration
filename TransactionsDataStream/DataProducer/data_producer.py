@@ -1,10 +1,11 @@
 import json
+import os
 from kafka import KafkaProducer
 from datetime import datetime, timedelta
 from kafka.errors import KafkaError
 
 KAFKA_TOPIC = 'transactions-input'
-KAFKA_BROKER = 'boot-6n3agog8.c3.kafka-serverless.us-east-1.amazonaws.com:9098'
+KAFKA_BROKER = os.getenv('BS')  # Read the broker endpoint from the environment variable
 
 start_time = datetime.now()
 
