@@ -1,8 +1,11 @@
 import json
 import os
+import boto3
 from kafka import KafkaProducer
 from datetime import datetime, timedelta
 from kafka.errors import KafkaError
+from botocore.credentials import RefreshableCredentials
+from botocore.session import get_session
 
 KAFKA_TOPIC = 'transactions-input'
 KAFKA_BROKER = os.getenv('BS')  # Read the broker endpoint from the environment variable
@@ -40,14 +43,40 @@ transactions = [
     {'accountId': 'acc8', 'amount': 2000, 'eventTime': increment_time(minutes=270, seconds=30)},
 ]
 
+def get_aws_credentials():
+    session = boto3.Session()
+    credentials = session.get_credentials().get_frozen_credentials()
+    return {
+        'AccessKeyId': credentials.access_key,
+        'SecretAccessKey': credentials.secret_key,
+        'SessionToken': credentials.token,
+    }
+
+def get_boto3_session():
+    if 'AWS_EXECUTION_ENV' in os.environ:
+        # Running on EC2, use instance role
+        return boto3.Session()
+    else:
+        # Running locally, use configured credentials
+        session = get_session()
+        credentials = RefreshableCredentials.create_from_metadata(
+            metadata=get_aws_credentials(),
+            refresh_using=get_aws_credentials,
+            method='sts-assume-role'
+        )
+        session._credentials = credentials
+        return boto3.Session(botocore_session=session)
+
+session = get_boto3_session()
+
 producer = KafkaProducer(
     bootstrap_servers=KAFKA_BROKER.split(','),
     value_serializer=lambda v: json.dumps(v).encode('utf-8'),
     security_protocol='SASL_SSL',
     sasl_mechanism='AWS_MSK_IAM',
-    sasl_jass_config='software.amazon.msk.auth.iam.IAMLoginModule required;',
-    sasl_client_callback_handler_class='software.amazon.msk.auth.iam.IAMClientCallbackHandler',
-    aws_region='us-east-1'
+    sasl_plain_username=session.get_credentials().access_key,
+    sasl_plain_password=session.get_credentials().secret_key,
+    ssl_check_hostname=False
 )
 
 def send_transaction(transaction):
