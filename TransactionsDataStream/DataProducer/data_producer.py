@@ -1,20 +1,21 @@
 import json
 import os
-import boto3
 from kafka import KafkaProducer
 from datetime import datetime, timedelta
 from kafka.errors import KafkaError
-from botocore.credentials import RefreshableCredentials
-from botocore.session import get_session
+from aws_msk_iam_sasl_signer import MSKAuthTokenProvider
 
+# Kafka topic and broker details
 KAFKA_TOPIC = 'transactions-input'
-KAFKA_BROKER = os.getenv('BS')  # Read the broker endpoint from the environment variable
+KAFKA_BROKER = os.getenv('BS')
 
+# Set up time increments for transaction event times
 start_time = datetime.now()
 
 def increment_time(minutes=0, seconds=0):
     return start_time + timedelta(minutes=minutes, seconds=seconds)
 
+# List of transactions
 transactions = [
     # Normal transactions for different accounts
     {'accountId': 'acc1', 'amount': 50, 'eventTime': increment_time(minutes=15)},
@@ -43,40 +44,19 @@ transactions = [
     {'accountId': 'acc8', 'amount': 2000, 'eventTime': increment_time(minutes=270, seconds=30)},
 ]
 
-def get_aws_credentials():
-    session = boto3.Session()
-    credentials = session.get_credentials().get_frozen_credentials()
-    return {
-        'AccessKeyId': credentials.access_key,
-        'SecretAccessKey': credentials.secret_key,
-        'SessionToken': credentials.token,
-    }
+class MSKTokenProvider:
+    def token(self):
+        token, _ = MSKAuthTokenProvider.generate_auth_token('us-east-1')  # Replace with your AWS region
+        return token
 
-def get_boto3_session():
-    if 'AWS_EXECUTION_ENV' in os.environ:
-        # Running on EC2, use instance role
-        return boto3.Session()
-    else:
-        # Running locally, use configured credentials
-        session = get_session()
-        credentials = RefreshableCredentials.create_from_metadata(
-            metadata=get_aws_credentials(),
-            refresh_using=get_aws_credentials,
-            method='sts-assume-role'
-        )
-        session._credentials = credentials
-        return boto3.Session(botocore_session=session)
-
-session = get_boto3_session()
+tp = MSKTokenProvider()
 
 producer = KafkaProducer(
-    bootstrap_servers=KAFKA_BROKER.split(','),
+    bootstrap_servers=[KAFKA_BROKER],
     value_serializer=lambda v: json.dumps(v).encode('utf-8'),
     security_protocol='SASL_SSL',
-    sasl_mechanism='AWS_MSK_IAM',
-    sasl_plain_username=session.get_credentials().access_key,
-    sasl_plain_password=session.get_credentials().secret_key,
-    ssl_check_hostname=False
+    sasl_mechanism='OAUTHBEARER',
+    sasl_oauth_token_provider=tp,
 )
 
 def send_transaction(transaction):
