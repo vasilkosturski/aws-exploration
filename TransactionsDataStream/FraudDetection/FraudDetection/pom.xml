@@ -12,7 +12,7 @@
   <properties>
     <java.version>1.11</java.version>
     <kda.runtime.version>1.2.0</kda.runtime.version>
-    <flink.version>1.19.0</flink.version>
+    <flink.version>1.19.1</flink.version>
   </properties>
 
   <dependencyManagement>
@@ -20,7 +20,6 @@
       <dependency>
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-bom</artifactId>
-        <!-- Get the latest SDK version from https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-bom -->
         <version>1.12.734</version>
         <type>pom</type>
         <scope>import</scope>
@@ -29,17 +28,6 @@
   </dependencyManagement>
 
   <dependencies>
-    <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-kinesisanalytics-runtime</artifactId>
-      <version>${kda.runtime.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-connector-kinesis</artifactId>
-      <version>4.1.0-1.16</version>
-    </dependency>
 
     <dependency>
       <groupId>org.apache.flink</groupId>
@@ -47,11 +35,10 @@
       <version>3.0.2-1.18</version>
     </dependency>
 
-
     <dependency>
       <groupId>org.apache.flink</groupId>
-      <artifactId>flink-connector-aws-kinesis-streams</artifactId>
-      <version>4.1.0-1.16</version>
+      <artifactId>flink-connector-datagen</artifactId>
+      <version>${flink.version}</version>
     </dependency>
 
     <dependency>
