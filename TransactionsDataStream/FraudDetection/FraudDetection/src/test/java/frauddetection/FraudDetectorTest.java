@@ -17,12 +17,14 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
 public class FraudDetectorTest {
     private StreamExecutionEnvironment env;
     private TestFraudAlertSink testSink;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @ClassRule
     public static MiniClusterWithClientResource flinkCluster =
@@ -37,8 +39,6 @@ public class FraudDetectorTest {
 
     @Test
     public void testFraudDetection() throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-
         GeneratorFunction<Long, String> transactionGenerator = new SerializableGeneratorFunction<>(index -> {
             Instant startTime = Instant.parse("2023-05-15T12:00:00Z");
             Transaction[] transactions = new Transaction[]{
@@ -86,12 +86,24 @@ public class FraudDetectorTest {
 
         assertEquals("Expected exactly two fraudulent transactions", 2, results.size());
 
-        String expectedFraudulentAlertAcc6 = "{\"accountId\":\"acc6\"}";
-        long countFraudAlertsAcc6 = results.stream().filter(alert -> alert.contains(expectedFraudulentAlertAcc6)).count();
+        List<FraudAlert> alerts = results.stream()
+                .map(result -> {
+                    try {
+                        return objectMapper.readValue(result, FraudAlert.class);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to deserialize alert", e);
+                    }
+                })
+                .collect(Collectors.toList());
+
+        long countFraudAlertsAcc6 = alerts.stream()
+                .filter(alert -> "acc6".equals(alert.getAccountId()))
+                .count();
         assertEquals("Expected exactly one fraudulent alert for account acc6", 1, countFraudAlertsAcc6);
 
-        String expectedFraudulentAlertAcc8 = "{\"accountId\":\"acc8\"}";
-        long countFraudAlertsAcc8 = results.stream().filter(alert -> alert.contains(expectedFraudulentAlertAcc8)).count();
+        long countFraudAlertsAcc8 = alerts.stream()
+                .filter(alert -> "acc8".equals(alert.getAccountId()))
+                .count();
         assertEquals("Expected exactly one fraudulent alert for account acc8", 1, countFraudAlertsAcc8);
     }
 
