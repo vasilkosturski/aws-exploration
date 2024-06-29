@@ -39,21 +39,21 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
     public void processElement(Transaction transaction, Context context, Collector<FraudAlert> collector) throws Exception {
         long eventTime = parseEventTime(transaction.getEventTime());
         Long lastEventTime = lastTransactionEventTime.value();
-        LOG.error("Processing transaction: {}", transaction);
+        LOG.info("Processing transaction: {}", transaction);
 
         if (lastEventTime != null) {
             long timeDelta = eventTime - lastEventTime;
-            LOG.error("Time delta: {}", timeDelta);
+            LOG.info("Time delta: {}", timeDelta);
 
             boolean isFraud = smallTransactionFlag.value() != null && smallTransactionFlag.value() &&
                     transaction.getAmount() > LARGE_AMOUNT && timeDelta < SUSPICIOUS_TIME_DELTA;
-            LOG.error("Fraud detected: {}", isFraud);
+            LOG.info("Fraud detected: {}", isFraud);
 
             if (isFraud) {
                 FraudAlert alert = new FraudAlert();
                 alert.setAccountId(transaction.getAccountId());
                 collector.collect(alert);
-                LOG.error("Alert generated: {}", alert);
+                LOG.info("Alert generated: {}", alert);
             }
         }
 
