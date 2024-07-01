@@ -11,6 +11,7 @@ import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import software.amazon.msk.auth.iam.IAMClientCallbackHandler;
 
 public class FraudDetector {
     private final Source<String, ?, ?> source;
@@ -40,22 +41,27 @@ public class FraudDetector {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // Kafka source
         KafkaSource<String> source = KafkaSource.<String>builder()
-                .setBootstrapServers("your.kafka.broker:9092")
-                .setTopics("input-topic")
+                .setBootstrapServers("your.msk.broker:9092")
+                .setTopics("transactions-input")
                 .setGroupId("fraud-detection-group")
                 .setValueOnlyDeserializer(new SimpleStringSchema())
+                .setProperty("security.protocol", "SASL_SSL")
+                .setProperty("sasl.mechanism", "AWS_MSK_IAM")
+                .setProperty("sasl.jaas.config", "software.amazon.msk.auth.iam.IAMLoginModule required;")
+                .setProperty("sasl.client.callback.handler.class", IAMClientCallbackHandler.class.getName())
                 .build();
 
-        // Kafka sink
         KafkaSink<String> sink = KafkaSink.<String>builder()
-                .setBootstrapServers("your.kafka.broker:9092")
+                .setBootstrapServers("your.msk.broker:9092")
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
-                        .setTopic("output-topic")
+                        .setTopic("transactions-output")
                         .setValueSerializationSchema(new SimpleStringSchema())
-                        .build()
-                )
+                        .build())
+                .setProperty("security.protocol", "SASL_SSL")
+                .setProperty("sasl.mechanism", "AWS_MSK_IAM")
+                .setProperty("sasl.jaas.config", "software.amazon.msk.auth.iam.IAMLoginModule required;")
+                .setProperty("sasl.client.callback.handler.class", IAMClientCallbackHandler.class.getName())
                 .build();
 
         new FraudDetector(source, sink).build(env);
