@@ -41,15 +41,17 @@ public class FraudDetector {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // Read broker information from environment variables
+        // Read broker information from environment variable
         String kafkaBrokers = System.getenv("KAFKA_BROKERS");
-        String inputTopic = System.getenv("KAFKA_INPUT_TOPIC");
-        String outputTopic = System.getenv("KAFKA_OUTPUT_TOPIC");
 
-        if (kafkaBrokers == null || inputTopic == null || outputTopic == null) {
-            throw new RuntimeException("Environment variables KAFKA_BROKERS, KAFKA_INPUT_TOPIC, and KAFKA_OUTPUT_TOPIC must be set");
+        if (kafkaBrokers == null) {
+            throw new RuntimeException("Environment variable KAFKA_BROKERS must be set");
         }
 
+        String inputTopic = "transactions-input";
+        String outputTopic = "transactions-output";
+
+        // Kafka source configuration with IAM authentication
         KafkaSource<String> source = KafkaSource.<String>builder()
                 .setBootstrapServers(kafkaBrokers)
                 .setTopics(inputTopic)
@@ -61,6 +63,7 @@ public class FraudDetector {
                 .setProperty("sasl.client.callback.handler.class", IAMClientCallbackHandler.class.getName())
                 .build();
 
+        // Kafka sink configuration with IAM authentication
         KafkaSink<String> sink = KafkaSink.<String>builder()
                 .setBootstrapServers(kafkaBrokers)
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
