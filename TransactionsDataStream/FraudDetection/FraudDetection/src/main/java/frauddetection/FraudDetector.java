@@ -41,9 +41,18 @@ public class FraudDetector {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+        // Read broker information from environment variables
+        String kafkaBrokers = System.getenv("KAFKA_BROKERS");
+        String inputTopic = System.getenv("KAFKA_INPUT_TOPIC");
+        String outputTopic = System.getenv("KAFKA_OUTPUT_TOPIC");
+
+        if (kafkaBrokers == null || inputTopic == null || outputTopic == null) {
+            throw new RuntimeException("Environment variables KAFKA_BROKERS, KAFKA_INPUT_TOPIC, and KAFKA_OUTPUT_TOPIC must be set");
+        }
+
         KafkaSource<String> source = KafkaSource.<String>builder()
-                .setBootstrapServers("your.msk.broker:9092")
-                .setTopics("transactions-input")
+                .setBootstrapServers(kafkaBrokers)
+                .setTopics(inputTopic)
                 .setGroupId("fraud-detection-group")
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .setProperty("security.protocol", "SASL_SSL")
@@ -53,9 +62,9 @@ public class FraudDetector {
                 .build();
 
         KafkaSink<String> sink = KafkaSink.<String>builder()
-                .setBootstrapServers("your.msk.broker:9092")
+                .setBootstrapServers(kafkaBrokers)
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
-                        .setTopic("transactions-output")
+                        .setTopic(outputTopic)
                         .setValueSerializationSchema(new SimpleStringSchema())
                         .build())
                 .setProperty("security.protocol", "SASL_SSL")
