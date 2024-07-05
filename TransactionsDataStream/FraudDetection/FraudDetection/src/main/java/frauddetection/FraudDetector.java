@@ -11,7 +11,6 @@ import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import software.amazon.msk.auth.iam.IAMClientCallbackHandler;
 
 public class FraudDetector {
     private final Source<String, ?, ?> source;
@@ -51,29 +50,19 @@ public class FraudDetector {
         String inputTopic = "transactions-input";
         String outputTopic = "transactions-output";
 
-        // Kafka source configuration with IAM authentication
         KafkaSource<String> source = KafkaSource.<String>builder()
                 .setBootstrapServers(kafkaBrokers)
                 .setTopics(inputTopic)
                 .setGroupId("fraud-detection-group")
                 .setValueOnlyDeserializer(new SimpleStringSchema())
-                .setProperty("security.protocol", "SASL_SSL")
-                .setProperty("sasl.mechanism", "AWS_MSK_IAM")
-                .setProperty("sasl.jaas.config", "software.amazon.msk.auth.iam.IAMLoginModule required;")
-                .setProperty("sasl.client.callback.handler.class", IAMClientCallbackHandler.class.getName())
                 .build();
 
-        // Kafka sink configuration with IAM authentication
         KafkaSink<String> sink = KafkaSink.<String>builder()
                 .setBootstrapServers(kafkaBrokers)
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
                         .setTopic(outputTopic)
                         .setValueSerializationSchema(new SimpleStringSchema())
                         .build())
-                .setProperty("security.protocol", "SASL_SSL")
-                .setProperty("sasl.mechanism", "AWS_MSK_IAM")
-                .setProperty("sasl.jaas.config", "software.amazon.msk.auth.iam.IAMLoginModule required;")
-                .setProperty("sasl.client.callback.handler.class", IAMClientCallbackHandler.class.getName())
                 .build();
 
         new FraudDetector(source, sink).build(env);
