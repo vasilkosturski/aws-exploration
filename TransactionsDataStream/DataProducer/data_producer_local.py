@@ -1,13 +1,11 @@
 import json
-import os
 from kafka import KafkaProducer
 from datetime import datetime, timedelta
 from kafka.errors import KafkaError
-from aws_msk_iam_sasl_signer import MSKAuthTokenProvider
 
 # Kafka topic and broker details
 KAFKA_TOPIC = 'transactions-input'
-KAFKA_BROKER = os.getenv('BS')
+KAFKA_BROKER = 'localhost:9092'  # Use the local Kafka broker address
 
 # Set up time increments for transaction event times
 start_time = datetime.now()
@@ -44,19 +42,10 @@ transactions = [
     {'accountId': 'acc8', 'amount': 2000, 'eventTime': increment_time(minutes=270, seconds=30)},
 ]
 
-class MSKTokenProvider:
-    def token(self):
-        token, _ = MSKAuthTokenProvider.generate_auth_token('us-east-1')  # Replace with your AWS region
-        return token
-
-tp = MSKTokenProvider()
-
+# Create Kafka producer without security settings
 producer = KafkaProducer(
     bootstrap_servers=[KAFKA_BROKER],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-    security_protocol='SASL_SSL',
-    sasl_mechanism='OAUTHBEARER',
-    sasl_oauth_token_provider=tp,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
 def send_transaction(transaction):
