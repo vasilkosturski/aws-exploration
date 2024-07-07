@@ -5,7 +5,7 @@ from kafka.errors import KafkaError
 
 # Kafka topic and broker details
 KAFKA_TOPIC = 'transactions-input'
-KAFKA_BROKER = 'localhost:9092'  # Use the local Kafka broker address
+KAFKA_BROKER = 'localhost:29092'  # Use the advertised listener address for external access
 
 # Set up time increments for transaction event times
 start_time = datetime.now()
