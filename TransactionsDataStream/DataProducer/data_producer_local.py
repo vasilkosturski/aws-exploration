@@ -1,19 +1,17 @@
 import json
 from kafka import KafkaProducer
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from kafka.errors import KafkaError
 
-# Kafka topic and broker details
 KAFKA_TOPIC = 'transactions-input'
-KAFKA_BROKER = 'localhost:29092'  # Use the advertised listener address for external access
+KAFKA_BROKER = 'localhost:29092'
 
-# Set up time increments for transaction event times
-start_time = datetime.now()
+start_time = datetime.now(timezone.utc)
 
 def increment_time(minutes=0, seconds=0):
     return start_time + timedelta(minutes=minutes, seconds=seconds)
 
-# List of transactions
+
 transactions = [
     # Normal transactions for different accounts
     {'accountId': 'acc1', 'amount': 50, 'eventTime': increment_time(minutes=15)},
@@ -49,7 +47,8 @@ producer = KafkaProducer(
 )
 
 def send_transaction(transaction):
-    transaction['eventTime'] = transaction['eventTime'].isoformat()
+    # Ensure the timestamp is in ISO-8601 format with a 'Z' at the end to indicate UTC time
+    transaction['eventTime'] = transaction['eventTime'].isoformat().replace("+00:00", "Z")
     future = producer.send(KAFKA_TOPIC, value=transaction, key=transaction['accountId'].encode('utf-8'))
     try:
         result = future.get(timeout=10)
