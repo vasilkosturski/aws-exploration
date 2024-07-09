@@ -5,17 +5,16 @@ from datetime import datetime, timedelta
 from kafka.errors import KafkaError
 from aws_msk_iam_sasl_signer import MSKAuthTokenProvider
 
-# Kafka topic and broker details
 KAFKA_TOPIC = 'transactions-input'
 KAFKA_BROKER = os.getenv('BS')
 
-# Set up time increments for transaction event times
 start_time = datetime.now()
+
 
 def increment_time(minutes=0, seconds=0):
     return start_time + timedelta(minutes=minutes, seconds=seconds)
 
-# List of transactions
+
 transactions = [
     # Normal transactions for different accounts
     {'accountId': 'acc1', 'amount': 50, 'eventTime': increment_time(minutes=15)},
@@ -44,10 +43,12 @@ transactions = [
     {'accountId': 'acc8', 'amount': 2000, 'eventTime': increment_time(minutes=270, seconds=30)},
 ]
 
+
 class MSKTokenProvider:
     def token(self):
         token, _ = MSKAuthTokenProvider.generate_auth_token('us-east-1')  # Replace with your AWS region
         return token
+
 
 tp = MSKTokenProvider()
 
@@ -59,6 +60,7 @@ producer = KafkaProducer(
     sasl_oauth_token_provider=tp,
 )
 
+
 def send_transaction(transaction):
     transaction['eventTime'] = transaction['eventTime'].isoformat()
     future = producer.send(KAFKA_TOPIC, value=transaction, key=transaction['accountId'].encode('utf-8'))
@@ -68,6 +70,7 @@ def send_transaction(transaction):
               f"Topic: {result.topic}, Partition: {result.partition}, Offset: {result.offset}")
     except KafkaError as e:
         print(f"Failed to send transaction: {e}")
+
 
 if __name__ == '__main__':
     for transaction in transactions:

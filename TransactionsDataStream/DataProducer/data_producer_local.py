@@ -8,6 +8,7 @@ KAFKA_BROKER = 'localhost:29092'
 
 start_time = datetime.now(timezone.utc)
 
+
 def increment_time(minutes=0, seconds=0):
     return start_time + timedelta(minutes=minutes, seconds=seconds)
 
@@ -40,11 +41,11 @@ transactions = [
     {'accountId': 'acc8', 'amount': 2000, 'eventTime': increment_time(minutes=270, seconds=30)},
 ]
 
-# Create Kafka producer without security settings
 producer = KafkaProducer(
     bootstrap_servers=[KAFKA_BROKER],
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
+
 
 def send_transaction(transaction):
     # Ensure the timestamp is in ISO-8601 format with a 'Z' at the end to indicate UTC time
@@ -56,6 +57,7 @@ def send_transaction(transaction):
               f"Topic: {result.topic}, Partition: {result.partition}, Offset: {result.offset}")
     except KafkaError as e:
         print(f"Failed to send transaction: {e}")
+
 
 if __name__ == '__main__':
     for transaction in transactions:
