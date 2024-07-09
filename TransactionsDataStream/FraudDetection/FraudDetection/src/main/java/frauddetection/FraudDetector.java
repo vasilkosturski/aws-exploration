@@ -40,7 +40,6 @@ public class FraudDetector {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // Read broker information from environment variable
         String kafkaBrokers = System.getenv("KAFKA_BROKERS");
 
         if (kafkaBrokers == null) {
