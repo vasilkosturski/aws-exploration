@@ -43,11 +43,9 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
 
         if (lastEventTime != null) {
             long timeDelta = eventTime - lastEventTime;
-            LOG.info("Time delta: {}", timeDelta);
 
             boolean isFraud = smallTransactionFlag.value() != null && smallTransactionFlag.value() &&
                     transaction.getAmount() > LARGE_AMOUNT && timeDelta < SUSPICIOUS_TIME_DELTA;
-            LOG.info("Fraud detected: {}", isFraud);
 
             if (isFraud) {
                 FraudAlert alert = new FraudAlert();

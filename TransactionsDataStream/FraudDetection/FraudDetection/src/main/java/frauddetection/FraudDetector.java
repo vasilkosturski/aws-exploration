@@ -31,8 +31,10 @@ public class FraudDetector {
                 .process(new FraudDetectionFunction())
                 .name("fraud-detector");
 
-        DataStream<String> alertStrings = alerts.map((MapFunction<FraudAlert, String>) alert ->
-                mapper.writeValueAsString(alert));
+        DataStream<String> alertStrings = alerts
+                .keyBy(FraudAlert::getAccountId)
+                .map((MapFunction<FraudAlert, String>) alert ->
+                        mapper.writeValueAsString(alert));
 
         alertStrings.sinkTo(sink);
     }
