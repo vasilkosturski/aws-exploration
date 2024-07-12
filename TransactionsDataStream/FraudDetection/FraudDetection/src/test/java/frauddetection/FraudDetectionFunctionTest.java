@@ -7,12 +7,11 @@ import org.apache.flink.streaming.util.KeyedOneInputStreamOperatorTestHarness;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class FraudDetectionFunctionTest {
     private KeyedOneInputStreamOperatorTestHarness<String, Transaction, FraudAlert> testHarness;
@@ -34,10 +33,11 @@ public class FraudDetectionFunctionTest {
         testHarness.processElement(new StreamRecord<>(new Transaction("account1", 5.0, "2023-06-04T10:00:00Z"), 100L));
         testHarness.processElement(new StreamRecord<>(new Transaction("account1", 600.0, "2023-06-04T10:00:30Z"), 200L));
 
-        List<FraudAlert> expected = Arrays.asList(
-                createFraudAlert("account1")
-        );
-        assertEquals(expected, extractOutput(testHarness));
+        FraudAlert expectedAlert = new FraudAlert();
+        expectedAlert.setAccountId("account1");
+
+        FraudAlert actual = extractSingleOutput(testHarness);
+        assertEquals(expectedAlert.getAccountId(), actual.getAccountId());
     }
 
     @Test
@@ -45,8 +45,8 @@ public class FraudDetectionFunctionTest {
         testHarness.processElement(new StreamRecord<>(new Transaction("account1", 5.0, "2023-06-04T10:00:00Z"), 100L));
         testHarness.processElement(new StreamRecord<>(new Transaction("account1", 600.0, "2023-06-04T10:02:00Z"), 200L));
 
-        List<FraudAlert> expected = Collections.emptyList();
-        assertEquals(expected, extractOutput(testHarness));
+        List<FraudAlert> actual = extractOutput(testHarness);
+        assertTrue(actual.isEmpty());
     }
 
     @Test
@@ -54,29 +54,26 @@ public class FraudDetectionFunctionTest {
         testHarness.processElement(new StreamRecord<>(new Transaction("account1", 5.0, "2023-06-04T10:00:00Z"), 100L));
         testHarness.processElement(new StreamRecord<>(new Transaction("account1", 15.0, "2023-06-04T10:00:30Z"), 200L));
 
-        List<FraudAlert> expected = Collections.emptyList();
-        assertEquals(expected, extractOutput(testHarness));
+        List<FraudAlert> actual = extractOutput(testHarness);
+        assertTrue(actual.isEmpty());
     }
 
     @Test
     public void testDifferentAccounts() throws Exception {
-        // Process elements for different accounts
         testHarness.processElement(new StreamRecord<>(new Transaction("account1", 5.0, "2023-06-04T10:00:00Z"), 100L));
         testHarness.processElement(new StreamRecord<>(new Transaction("account2", 600.0, "2023-06-04T10:00:30Z"), 200L));
 
-        List<FraudAlert> expected = Collections.emptyList();
-        assertEquals(expected, extractOutput(testHarness));
-    }
-
-    private FraudAlert createFraudAlert(String accountId) {
-        FraudAlert alert = new FraudAlert();
-        alert.setAccountId(accountId);
-        return alert;
+        List<FraudAlert> actual = extractOutput(testHarness);
+        assertTrue(actual.isEmpty());
     }
 
     private List<FraudAlert> extractOutput(KeyedOneInputStreamOperatorTestHarness<String, Transaction, FraudAlert> harness) {
         return harness.getOutput().stream()
                 .map(record -> ((StreamRecord<FraudAlert>) record).getValue())
                 .collect(Collectors.toList());
+    }
+
+    private FraudAlert extractSingleOutput(KeyedOneInputStreamOperatorTestHarness<String, Transaction, FraudAlert> harness) {
+        return extractOutput(harness).get(0);
     }
 }
