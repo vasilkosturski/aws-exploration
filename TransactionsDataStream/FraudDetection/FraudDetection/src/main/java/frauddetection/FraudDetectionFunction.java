@@ -1,5 +1,6 @@
 package frauddetection;
 
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.flink.api.common.state.ValueState;
@@ -24,15 +25,13 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
 
     @Override
     public void open(Configuration parameters) {
-        ValueStateDescriptor<Boolean> smallTransactionFlagDescriptor = new ValueStateDescriptor<>(
-                "small-transaction-flag",
-                Types.BOOLEAN);
-        smallTransactionFlag = getRuntimeContext().getState(smallTransactionFlagDescriptor);
+        smallTransactionFlag = createStateDescriptor("small-transaction-flag", Types.BOOLEAN);
+        lastTransactionEventTime = createStateDescriptor("last-transaction-event-time", Types.LONG);
+    }
 
-        ValueStateDescriptor<Long> eventTimeDescriptor = new ValueStateDescriptor<>(
-                "last-transaction-event-time",
-                Types.LONG);
-        lastTransactionEventTime = getRuntimeContext().getState(eventTimeDescriptor);
+    private <T> ValueState<T> createStateDescriptor(String name, TypeInformation<T> typeInfo) {
+        ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(name, typeInfo);
+        return getRuntimeContext().getState(descriptor);
     }
 
     @Override
@@ -41,22 +40,32 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
         Long lastEventTime = lastTransactionEventTime.value();
         LOG.info("Processing transaction: {}", transaction);
 
+        if (isFraudulent(transaction, lastEventTime, eventTime)) {
+            generateFraudAlert(transaction, collector);
+        }
+
+        updateState(transaction, eventTime);
+    }
+
+    private boolean isFraudulent(Transaction transaction, Long lastEventTime, long eventTime) throws Exception {
         if (lastEventTime != null) {
             long timeDelta = eventTime - lastEventTime;
 
-            boolean isFraud = smallTransactionFlag.value() != null && smallTransactionFlag.value() &&
-                    transaction.getAmount() > LARGE_AMOUNT && timeDelta < SUSPICIOUS_TIME_DELTA;
-
-            if (isFraud) {
-                FraudAlert alert = new FraudAlert();
-                alert.setAccountId(transaction.getAccountId());
-                collector.collect(alert);
-                LOG.info("Alert generated: {}", alert);
-            }
+            return smallTransactionFlag.value() != null && smallTransactionFlag.value()
+                    && transaction.getAmount() > LARGE_AMOUNT && timeDelta < SUSPICIOUS_TIME_DELTA;
         }
+        return false;
+    }
 
+    private void generateFraudAlert(Transaction transaction, Collector<FraudAlert> collector) {
+        FraudAlert alert = new FraudAlert();
+        alert.setAccountId(transaction.getAccountId());
+        collector.collect(alert);
+        LOG.info("Alert generated: {}", alert);
+    }
+
+    private void updateState(Transaction transaction, long eventTime) throws Exception {
         smallTransactionFlag.update(transaction.getAmount() < SMALL_AMOUNT);
-
         lastTransactionEventTime.update(eventTime);
     }
 
