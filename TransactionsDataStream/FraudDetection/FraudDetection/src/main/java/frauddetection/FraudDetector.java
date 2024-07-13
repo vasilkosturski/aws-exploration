@@ -13,9 +13,9 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 public class FraudDetector {
+    private static final ObjectMapper mapper = new ObjectMapper();
     private final Source<String, ?, ?> source;
     private final Sink<String> sink;
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     public FraudDetector(Source<String, ?, ?> source, Sink<String> sink) {
         this.source = source;
@@ -23,7 +23,7 @@ public class FraudDetector {
     }
 
     public void build(StreamExecutionEnvironment env) {
-        DataStream<Transaction> transactions = env.fromSource(source, WatermarkStrategy.noWatermarks(), "Kafka Source")
+        DataStream<Transaction> transactions = env.fromSource(source, WatermarkStrategy.noWatermarks(), "Transactions Source")
                 .map((MapFunction<String, Transaction>) value -> mapper.readValue(value, Transaction.class));
 
         DataStream<FraudAlert> alerts = transactions
