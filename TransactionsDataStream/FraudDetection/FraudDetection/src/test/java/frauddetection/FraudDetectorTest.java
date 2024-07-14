@@ -68,15 +68,10 @@ public class FraudDetectorTest {
                     new Transaction("acc8", 9, startTime.plus(270, ChronoUnit.MINUTES).toString()),
                     new Transaction("acc8", 2000, startTime.plus(270, ChronoUnit.MINUTES).plus(30, ChronoUnit.SECONDS).toString())
             };
-            if (index < transactions.length) {
-                try {
-                    return objectMapper.writeValueAsString(transactions[Math.toIntExact(index)]);
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to serialize transaction", e);
-                }
-            } else {
+            if (index >= transactions.length) {
                 return null;
             }
+            return objectMapper.writeValueAsString(transactions[Math.toIntExact(index)]);
         });
 
         long numberOfRecords = 16;
