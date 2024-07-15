@@ -39,7 +39,30 @@ public class FraudDetectorTest {
 
     @Test
     public void testFraudDetection() throws Exception {
-        GeneratorFunction<Long, String> transactionGenerator = new SerializableGeneratorFunction<>(index -> {
+        DataGeneratorSource<String> dataGenSource = new DataGeneratorSource<>(
+                createTransactionGenerator(),
+                16,
+                TypeInformation.of(String.class)
+        );
+
+        FraudDetector fraudDetector = new FraudDetector(dataGenSource, testSink);
+        fraudDetector.build(env);
+        env.execute("Test Fraud Detection");
+
+        List<FraudAlert> alerts = getFraudAlertsFromResults(testSink.getValues());
+
+        assertEquals("Expected exactly two fraudulent transactions", 2, alerts.size());
+        assertEquals("Expected exactly one fraudulent alert for account acc6", 1, countFraudAlertsForAccount(alerts, "acc6"));
+        assertEquals("Expected exactly one fraudulent alert for account acc8", 1, countFraudAlertsForAccount(alerts, "acc8"));
+    }
+
+    @After
+    public void tearDown() {
+        TestFraudAlertSink.clear();
+    }
+
+    private GeneratorFunction<Long, String> createTransactionGenerator() {
+        return new SerializableGeneratorFunction<>(index -> {
             Instant startTime = Instant.parse("2023-05-15T12:00:00Z");
             Transaction[] transactions = new Transaction[]{
                     // Normal transactions for different accounts
@@ -73,24 +96,10 @@ public class FraudDetectorTest {
             }
             return objectMapper.writeValueAsString(transactions[Math.toIntExact(index)]);
         });
+    }
 
-        long numberOfRecords = 16;
-
-        DataGeneratorSource<String> dataGenSource = new DataGeneratorSource<>(
-                transactionGenerator,
-                numberOfRecords,
-                TypeInformation.of(String.class)
-        );
-
-        FraudDetector fraudDetector = new FraudDetector(dataGenSource, testSink);
-        fraudDetector.build(env);
-        env.execute("Test Fraud Detection");
-
-        List<String> results = testSink.getValues();
-
-        assertEquals("Expected exactly two fraudulent transactions", 2, results.size());
-
-        List<FraudAlert> alerts = results.stream()
+    private List<FraudAlert> getFraudAlertsFromResults(List<String> results) {
+        return results.stream()
                 .map(result -> {
                     try {
                         return objectMapper.readValue(result, FraudAlert.class);
@@ -99,21 +108,12 @@ public class FraudDetectorTest {
                     }
                 })
                 .collect(Collectors.toList());
-
-        long countFraudAlertsAcc6 = alerts.stream()
-                .filter(alert -> "acc6".equals(alert.getAccountId()))
-                .count();
-        assertEquals("Expected exactly one fraudulent alert for account acc6", 1, countFraudAlertsAcc6);
-
-        long countFraudAlertsAcc8 = alerts.stream()
-                .filter(alert -> "acc8".equals(alert.getAccountId()))
-                .count();
-        assertEquals("Expected exactly one fraudulent alert for account acc8", 1, countFraudAlertsAcc8);
     }
 
-    @After
-    public void tearDown() {
-        TestFraudAlertSink.clear();
+    private long countFraudAlertsForAccount(List<FraudAlert> alerts, String accountId) {
+        return alerts.stream()
+                .filter(alert -> accountId.equals(alert.getAccountId()))
+                .count();
     }
 
     private static class SerializableGeneratorFunction<T, R> implements GeneratorFunction<T, R>, Serializable {
