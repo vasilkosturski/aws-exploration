@@ -29,11 +29,6 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
         lastTransactionEventTime = createStateDescriptor("last-transaction-event-time", Types.LONG);
     }
 
-    private <T> ValueState<T> createStateDescriptor(String name, TypeInformation<T> typeInfo) {
-        ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(name, typeInfo);
-        return getRuntimeContext().getState(descriptor);
-    }
-
     @Override
     public void processElement(Transaction transaction, Context context, Collector<FraudAlert> collector) throws Exception {
         long eventTime = parseEventTime(transaction.getEventTime());
@@ -45,6 +40,11 @@ public class FraudDetectionFunction extends KeyedProcessFunction<String, Transac
         }
 
         updateState(transaction, eventTime);
+    }
+
+    private <T> ValueState<T> createStateDescriptor(String name, TypeInformation<T> typeInfo) {
+        ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(name, typeInfo);
+        return getRuntimeContext().getState(descriptor);
     }
 
     private boolean isFraudulent(Transaction transaction, Long lastEventTime, long eventTime) throws Exception {
