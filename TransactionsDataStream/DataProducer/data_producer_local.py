@@ -36,7 +36,7 @@ transactions = [
     {'accountId': 'acc7', 'amount': 45, 'eventTime': increment_time(minutes=250)},
     {'accountId': 'acc7', 'amount': 85, 'eventTime': increment_time(minutes=260)},
 
-    # Additional potentially fraudulent transactions
+    # Additional fraudulent transactions
     {'accountId': 'acc8', 'amount': 9, 'eventTime': increment_time(minutes=270)},
     {'accountId': 'acc8', 'amount': 2000, 'eventTime': increment_time(minutes=270, seconds=30)},
 ]
