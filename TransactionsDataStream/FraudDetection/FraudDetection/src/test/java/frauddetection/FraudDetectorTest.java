@@ -87,7 +87,7 @@ public class FraudDetectorTest {
                     new Transaction("acc7", 45, startTime.plus(250, ChronoUnit.MINUTES).toString()),
                     new Transaction("acc7", 85, startTime.plus(260, ChronoUnit.MINUTES).toString()),
 
-                    // Additional potentially fraudulent transactions
+                    // Additional fraudulent transactions
                     new Transaction("acc8", 9, startTime.plus(270, ChronoUnit.MINUTES).toString()),
                     new Transaction("acc8", 2000, startTime.plus(270, ChronoUnit.MINUTES).plus(30, ChronoUnit.SECONDS).toString())
             };
