@@ -53,8 +53,9 @@ def send_transaction(transaction):
     future = producer.send(KAFKA_TOPIC, value=transaction, key=transaction['accountId'].encode('utf-8'))
     try:
         result = future.get(timeout=10)
-        print(f"Sent transaction for amount ${transaction['amount']} at {transaction['eventTime']}. "
-              f"Topic: {result.topic}, Partition: {result.partition}, Offset: {result.offset}")
+        print(f"Sent transaction for account {transaction['accountId']}, amount ${transaction['amount']} "
+              f"at {transaction['eventTime']}. Topic: {result.topic}, Partition: {result.partition}, "
+              f"Offset: {result.offset}")
     except KafkaError as e:
         print(f"Failed to send transaction: {e}")
 
