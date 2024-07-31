@@ -49,7 +49,7 @@ public class FraudDetectorTest {
         fraudDetector.build(env);
         env.execute("Test Fraud Detection");
 
-        List<FraudAlert> alerts = getFraudAlertsFromResults(testSink.getValues());
+        List<FraudAlert> alerts = getFraudAlertsFromResults(TestFraudAlertSink.getValues());
 
         assertEquals("Expected exactly two fraudulent transactions", 2, alerts.size());
         assertEquals("Expected exactly one fraudulent alert for account acc6", 1, countFraudAlertsForAccount(alerts, "acc6"));
